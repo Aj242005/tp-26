@@ -1,30 +1,41 @@
-# SIH26155 · Configuration Auditor
+# Prooflane
 
-Local, authenticated network configuration auditing with evidence-linked findings and reviewed adaptation to unfamiliar formats. The application runs in Docker; Gemini inference uses the configured Google API backend. No cloud deployment is required.
+**Understand a configuration. Trace the evidence. Review the change.**
 
-## Start
+Prooflane is a workspace for teams reviewing network device configurations. It turns uploaded snapshots into inspectable findings, keeps uncertainty visible, and helps reviewers teach the system unfamiliar formats through tested, versioned mappings.
 
-Prerequisites: Docker Desktop with its Linux engine running; `uv` for bootstrap and local Python checks. Node 24/pnpm are needed only for frontend development and browser tests. Allocate at least 8 GiB to Docker for the scale profile.
+Every supported finding keeps the observed setting, expected value, source lines, rule version and proposed correction together. An interactive 3D audit trail lets you follow an assessment from input to report and inspect the artifacts behind each stage.
+
+[Website walkthrough](docs/pitch-and-walkthrough.md) | [Architecture](docs/deliverables/architecture.pdf) | [Operations](docs/operations.md) | [Security](docs/security.md)
+
+## How it works
+
+1. **Bring a snapshot.** Upload configurations with device, firmware and completeness information.
+2. **Run an assessment.** Versioned rules evaluate supported facts. Missing, conflicting and unsupported evidence stays unknown.
+3. **Follow the finding.** Inspect source lines, assumptions, severity and a proposed correction, or explore the 3D trail.
+4. **Investigate unfamiliar syntax.** Gemini consults approved references, proposes a bounded mapping and runs its cases. Suggestions stay drafts.
+5. **Review and reuse.** A reviewer approves tested mappings for future assessments. Earlier results keep their original versions. Export PDF, JSON or CSV evidence.
+
+The application does not modify live devices. Model responses do not establish compliance or approve their own mappings.
+
+## Run locally
+
+Install Docker with its Linux engine and [uv](https://docs.astral.sh/uv/). Node 24 and pnpm are needed for frontend development only. Allow at least 8 GB for the complete Docker stack.
 
 ```powershell
 uv sync --frozen
 uv run python scripts/bootstrap.py
 docker compose up -d --build
+docker compose exec -T api python scripts/sync_identity.py
 ```
 
-Open **http://localhost:8185**. Sign in as `admin` using `LOCAL_ADMIN_PASSWORD` from the ignored `.env` file. `auditor` has upload/audit access but cannot approve mappings. `other` belongs to a separate local organization. Bootstrap preserves existing credentials and provider configuration.
+Open **http://localhost:8185**. Sign in as `admin` with `LOCAL_ADMIN_PASSWORD` from your ignored `.env`. Local bootstrap also creates an `auditor` account and an `other` account in a separate test organization. Passwords are generated individually; none is published here.
 
-For two API replicas and two workers:
+The default gateway binds to loopback. Persistent volumes hold identity, records and encrypted artifacts. `docker compose stop` preserves them; `docker compose down -v` destroys them.
 
-```powershell
-docker compose -f compose.yaml -f compose.scale.yaml up -d --build
-```
+## Connect Gemini
 
-Only the gateway is exposed, bound to loopback. API, worker, PostgreSQL, Valkey, SeaweedFS S3 and Keycloak communicate on Docker networks. `docker compose stop` preserves all data. **Do not use `down -v` unless you intend to destroy the persistent database, identity and evidence stores.**
-
-## Gemini configuration
-
-Set these fields in `.env`, then recreate API and worker containers:
+Configure the backend `.env`, then recreate API and worker containers:
 
 ```dotenv
 GEMINI_BACKEND=vertex_express
@@ -33,32 +44,35 @@ GEMINI_MODEL=your_exact_model_identifier
 LLM_ENABLED=true
 ```
 
-Use `developer` for a Gemini Developer API key. Vertex AI Express Mode uses the API key directly and requires no application deployment or service-account file. The selected model is never silently substituted. `uv run python -m scripts.check_provider` sends a small synthetic function-call check and records a redacted result. Disabling AI leaves deterministic audits, manual mapping review and exports usable.
+Choose `developer` for the Gemini Developer API. The model is never silently substituted. `uv run python -m scripts.check_provider` performs a small synthetic tool-call check. Deterministic assessments, manual mapping review and exports remain available with AI disabled. Never put provider or OAuth secrets in browser code or `VITE_*` variables.
 
-## Use the application
+## Inside the workspace
 
-1. Add UTF-8 configurations in **Devices**, or load explicitly labelled synthetic examples from Overview. Bulk uploads accept up to 100 files, 10 MiB per file and 100 MiB per batch. Mark a complete snapshot only when all relevant scopes are present.
-2. Select a baseline or imported policy and run an audit. Open its findings to inspect observed/expected values, exact source lines, coverage and a reviewable command proposal.
-3. For unfamiliar syntax, open **Investigation**. Gemini can search approved references, test a declarative mapping and ask a clarification. Its output stays a draft.
-4. In **Training & review**, correct cases, test them, and have a reviewer activate the mapping. A new audit uses it immediately without a code deployment; retiring it rolls back future use. Existing assessments keep their pinned versions.
-5. Download the per-device PDF, JSON or CSV. Administrators manage artifact retention and can delete a configuration with all its assessments and exports.
+| Area | What it provides |
+| --- | --- |
+| Evidence console | Responsive dark/light workspace, keyboard navigation and linked findings |
+| Audit trail | Interactive 3D stages with captured artifacts and an accessible flat view |
+| Interpretation | Declared native formats plus constrained text, JSON and XML mappings |
+| Review | Test cases, explicit approval, version pinning and mapping retirement |
+| Identity | Keycloak, Google/GitHub connections, organizations and role checks |
+| Processing | Durable jobs, leases, retries, shared rate limits and independent API/worker replicas |
+| Storage | Encrypted artifacts, retention controls and verified backup tooling |
 
-## What the checks establish
+React/TypeScript, FastAPI, PostgreSQL, Valkey, SeaweedFS and Keycloak form the application. NGINX serves the frontend; optional Caddy provides public HTTPS. Docker Compose makes deployment reproducible. A single VM is one failure domain, with no regional redundancy or uptime SLA.
 
-The initial content contains **20 team-authored technical checks**. Native interpretation covers a declared subset of Cisco IOS/IOS-XE, Junos **set** output and FortiOS. Bounded text/JSON/XML mappings extend interpretation. Missing evidence, unsupported effective inheritance and conflicting settings remain unknown.
+## Coverage and limits
 
-The organizer supplied a reference list, **not a dataset**. Included examples are synthetic. CIS/NIST/STIG/ISO selections are candidate crosswalk views over the technical baseline, **not full official benchmark implementations or certification**. Authorized reference text and reviewed policy JSON can be imported. Command proposals require device/firmware and operational review; the application does not change live equipment.
+The initial baseline has **20 team-authored technical checks**. Native interpretation covers a declared subset of Cisco IOS/IOS-XE, Junos `set` output and FortiOS. Included examples are synthetic. Framework views are candidate crosswalks over this baseline, not complete official benchmark implementations or certification.
 
-Read [coverage and evidence](docs/coverage.md), [operations](docs/operations.md), [security boundaries](docs/security.md), and [verification results](docs/verification.md). The approved [implementation plan](IMPLEMENTATION_PLAN.md) is retained with an implementation reconciliation in [status](IMPLEMENTATION_STATUS.md).
+Use authorized, versioned references and independently reviewed labels when extending coverage. See [coverage](docs/coverage.md), [reference and evaluation guidance](docs/dataset-and-benchmarks.md), [research hypotheses](docs/novelty-audit.md), [verification](docs/verification.md) and the [dependency review](docs/dependency-review.md) for measured scope and remaining findings.
 
-The local release retains upstream image findings documented in the [dependency review](docs/dependency-review.md), including an unresolved Keycloak template-library issue. Keep the gateway bound to loopback; this release has not been qualified for external hosting.
+## Documentation
 
-## Handover
-
-- [Architecture document](docs/deliverables/architecture.pdf): two pages.
-- [Technical presentation](docs/deliverables/technical-presentation.pptx): five slides.
-- [Recorded application walkthrough](docs/deliverables/demo.webm): 114 seconds, using synthetic configurations and persisted results.
-- [Example device report](docs/deliverables/example-device-report.pdf): generated from the synthetic IOS fixture.
+- [Identity and HTTPS](docs/identity-and-https.md): social sign-in, callbacks and Caddy.
+- [Vercel frontend](docs/vercel-frontend.md): frontend hosting and backend connection.
+- [Operations](docs/operations.md): scaling, failure handling, backup and recovery.
+- [Implementation plan](IMPLEMENTATION_PLAN.md) and [current status](IMPLEMENTATION_STATUS.md).
+- [Presentation](docs/deliverables/technical-presentation.pptx), [recorded walkthrough](docs/deliverables/demo.webm) and [sample report](docs/deliverables/example-device-report.pdf), using synthetic examples.
 
 ## Development checks
 
@@ -71,4 +85,6 @@ pnpm --dir web exec playwright install chromium
 pnpm --dir web test:e2e
 ```
 
-Browser tests use the real local Keycloak service and generated local credentials. The live agent test runs only when `LLM_ENABLED=true` and uses synthetic material. Runtime test output, credentials, screenshots and backups are ignored by Git. Runtime deployment profiles and operational rehearsal commands are documented in [operations](docs/operations.md).
+Browser workflow tests use local Keycloak and generated credentials. Live agent tests require an enabled provider and use synthetic material. Credentials, uploads, private research, backups and runtime test output are excluded from Git.
+
+Hosted pilot: [open Prooflane](https://prooflane-five.vercel.app). See [cloud operations](docs/cloud-deployment.md) for topology, backups and deployment limits.

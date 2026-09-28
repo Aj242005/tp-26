@@ -31,19 +31,19 @@ The full severity counts below are generated from the retained inventory. Scanne
 
 The official registry tag list was fetched with `webcmd web fetch` from <https://quay.io/api/v1/repository/keycloak/keycloak/tag/?onlyActiveTags=true&limit=25>. It identified stable 26.7.4 and its digest. The initially attempted 26.6.6 tag was unavailable; no nightly image was selected. No browser fallback was needed. Advisory descriptions and fixed-version fields are retained in the raw Trivy reports; runtime reachability judgments above are local assessments, not vendor attestations.
 
-The same command fetched the exact-version [locale selector](https://raw.githubusercontent.com/keycloak/keycloak/26.7.4/services/src/main/java/org/keycloak/locale/DefaultLocaleSelectorProvider.java) and [FreeMarker provider](https://raw.githubusercontent.com/keycloak/keycloak/26.7.4/services/src/main/java/org/keycloak/theme/freemarker/DefaultFreeMarkerProvider.java). Local copies are retained in `runtime/keycloak-locale-source.txt` and `runtime/keycloak-freemarker-source.txt`. A read-only query of `realm.internationalization_enabled` and `registration_allowed` returned false for both in `sih26155`. No browser fallback was needed.
+The same command fetched the exact-version [locale selector](https://raw.githubusercontent.com/keycloak/keycloak/26.7.4/services/src/main/java/org/keycloak/locale/DefaultLocaleSelectorProvider.java) and [FreeMarker provider](https://raw.githubusercontent.com/keycloak/keycloak/26.7.4/services/src/main/java/org/keycloak/theme/freemarker/DefaultFreeMarkerProvider.java). Local copies are retained in `runtime/keycloak-locale-source.txt` and `runtime/keycloak-freemarker-source.txt`. A read-only query of `realm.internationalization_enabled` and `registration_allowed` returned false for both in `prooflane`. No browser fallback was needed.
 
 ## Image finding counts
 
 | Image | Critical | High | Medium | Low | Unknown |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| sih26155-web:local | 0 | 0 | 0 | 0 | 0 |
+| prooflane-web:local | 0 | 0 | 0 | 0 | 0 |
 | valkey/valkey:8-alpine | 0 | 0 | 0 | 0 | 0 |
 | nginxinc/nginx-unprivileged:stable-alpine | 0 | 0 | 0 | 0 | 0 |
 | chrislusf/seaweedfs | 0 | 1 | 0 | 0 | 1 |
 | otel/opentelemetry-collector-contrib | 0 | 0 | 0 | 0 | 1 |
 | postgres:17-alpine | 1 | 21 | 21 | 2 | 1 |
 | prom/prometheus | 0 | 0 | 0 | 0 | 2 |
-| sih26155-app:local | 0 | 44 | 53 | 57 | 2 |
+| prooflane-app:local | 0 | 44 | 53 | 57 | 2 |
 | grafana/grafana | 0 | 104 | 33 | 35 | 6 |
 | quay.io/keycloak/keycloak:26.7.4 | 4 | 7 | 50 | 26 | 0 |

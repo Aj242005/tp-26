@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import RedirectResponse, JSONResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
@@ -55,7 +55,7 @@ async def lifespan(app):
     yield
 
 
-app = FastAPI(title="SIH26155 Evidence Auditor", version="0.1.0", lifespan=lifespan,
+app = FastAPI(title="Prooflane Evidence Auditor", version="0.1.0", lifespan=lifespan,
               docs_url=None, redoc_url=None, openapi_url=None)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "api",
     urlsplit(settings().app_origin).hostname, *socket.gethostbyname_ex(socket.gethostname())[2]])
@@ -154,6 +154,16 @@ def metrics():
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
+@app.get("/api/auth/providers")
+def auth_providers():
+    return {"providers": auth.providers()}
+
+
+@app.get("/api/auth/account")
+def identity_account():
+    return RedirectResponse(settings().oidc_issuer_url + "/account/", status_code=302)
+
+
 @app.get("/api/auth/login")
 async def login(request: Request):
     await asyncio.to_thread(limit, "login:" + (request.headers.get("x-forwarded-for") or request.client.host), 10, 5)
@@ -185,7 +195,7 @@ def me(request: Request):
     return {key: value for key, value in user.items() if key != "session_id"} | {
         "ai": {"enabled": cfg.llm_enabled, "configured": cfg.ai_ready,
                "model": cfg.gemini_model or None, "provider": "Vertex AI Express" if cfg.gemini_backend == "vertex_express" else "Gemini Developer API"},
-        "workspace": "Local workspace" if user["tenant_id"] == cfg.default_tenant_id else "Separate workspace"}
+        "workspace": ("Prooflane workspace" if cfg.app_env == "production" else "Local workspace") if user["tenant_id"] == cfg.default_tenant_id else "Separate workspace"}
 
 
 @app.get("/api/schema")

@@ -17,7 +17,7 @@ with httpx.Client(timeout=15) as client:
         time.sleep(5)
     assert len(targets) == 2 and all(target["health"] == "up" for target in targets), "Both API scrape targets must be healthy"
     result["healthy_api_targets"] = len(targets)
-    dashboard = client.get("http://localhost:3005/api/dashboards/uid/sih26155", auth=("admin", cfg["LOCAL_ADMIN_PASSWORD"]))
+    dashboard = client.get("http://localhost:3005/api/dashboards/uid/prooflane", auth=("admin", cfg["LOCAL_ADMIN_PASSWORD"]))
     dashboard.raise_for_status()
     result["dashboard_panels"] = len(dashboard.json()["dashboard"]["panels"])
     datasource = client.get("http://localhost:3005/api/datasources/uid/local-prometheus/health", auth=("admin", cfg["LOCAL_ADMIN_PASSWORD"]))

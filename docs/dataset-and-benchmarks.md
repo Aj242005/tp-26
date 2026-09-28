@@ -1,32 +1,6 @@
-# SIH26155 data, benchmark and evaluation plan
+# References and evaluation corpus
 
-Implementation note (28 September 2026): the sections below preserve the approved corpus plan. The delivered corpus is five team-authored synthetic fixtures plus labelled test mutations; see [actual coverage](coverage.md) and [verification](verification.md). No official dataset or licensed benchmark archive was obtained. The implemented importers accept explicit authorized reference text and reviewed policy JSON; ZIP/PDF/SCAP package import is not implemented. Bounded lexical passage search supports the agent. Exact-model live Vertex AI Express calls have now passed. Independent vendor labels and fair comparative evaluations remain external evidence work.
-
-Prepared: 28 September 2026. Status: implementation design, pending approval with the main plan.
-
-## 1. What the organizer supplied
-
-The user provided the full statement, preserved unchanged in [problem-statement-user-provided.txt](problem-statement-user-provided.txt), and this reference from the portal's data-links field:
-
-> Check nciipc.gov.in, helpdesk1@nciipc.gov.in — CIS Benchmarks, NIST SP 800-53, DISA STIGs, ISO/IEC 27001; Vendor-specific CLI configuration samples.
-
-The user explicitly clarified that this is a list of authorities and reference material, **not an official downloadable dataset or labelled vendor-configuration collection**. We will therefore build a traceable corpus rather than assume organizer-provided files, benchmark labels or permission to redistribute documents. The earlier [JSON capture](problem-statement.json) remains unchanged as a historical snapshot; this document records the additional context supplied afterward.
-
-The email address is recorded as a reference contact. No email has been sent, and contacting the helpdesk is not required to implement the application.
-
-## 2. Source register and verification status
-
-| Source | Intended use | Status at this revision |
-| --- | --- | --- |
-| [NCIIPC](https://nciipc.gov.in/) | Organizer-specified authority/reference starting point | Both the bare and `www` HTTPS hostnames timed out. No site content, dataset or benchmark download was obtained |
-| CIS Benchmarks | Vendor/version-specific hardening references | Named by the organizer. Exact editions, usable files and redistribution terms must be established when acquiring content |
-| [NIST SP 800-53 reference page](https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final) | Security-control catalog and reviewed control crosswalks | Direct fetch returned `FETCH_BLOCKED`; no catalog was downloaded or interpreted in this revision |
-| DISA STIGs | Applicable device/version technical guidance; structured content where available | Named by the organizer. Select and verify exact releases during source acquisition |
-| ISO/IEC 27001 | Management-system/control context and explicit crosswalks | Named by the organizer. Do not assume that organizational requirements can be tested from device configuration alone |
-| Vendor documentation and examples | CLI syntax, defaults, scope/inheritance and firmware semantics | Acquire official/appropriately licensed examples for the selected validation cohort; none is represented as an organizer dataset |
-| Team-authored configurations | Edge cases, controlled deviations, failure cases and demonstrations | Planned. They must be labelled synthetic and retain the source rules used to construct expected outcomes |
-
-A reference name is not an imported policy pack. Acquiring and validating the exact content is implementation work. Website unavailability must not be converted into a claim that the referenced material does not exist.
+Prooflane uses authorized reference documents, reviewed technical rules and explicitly labelled synthetic configurations. No independently labelled vendor dataset is included. Standards describe expectations; they are not sample configurations or proof of device compliance.
 
 ## 3. Source acquisition and local storage
 
@@ -64,7 +38,7 @@ The policy UI and PDF must expose tested, unsupported, not-applicable and extern
 
 Start with Cisco IOS/IOS-XE, Junos and FortiOS when suitable source material is available. Include hierarchical context, scoped command blocks and defaults. Add a structured family such as SONiC JSON or cloud security-group exports when references support its semantics. The architecture remains open to other families through the mapping interface.
 
-Build a matrix of **control × configuration family × semantic condition**. Conditions include explicit secure/insecure values, missing context, inherited defaults, negation, nested scope, reordered input, unsupported firmware and malformed input. Corpus size follows meaningful coverage; generating many nearly identical files does not establish quality.
+Build a matrix of **control Ã— configuration family Ã— semantic condition**. Conditions include explicit secure/insecure values, missing context, inherited defaults, negation, nested scope, reordered input, unsupported firmware and malformed input. Corpus size follows meaningful coverage; generating many nearly identical files does not establish quality.
 
 Each entry records:
 
@@ -99,12 +73,3 @@ Use equal model, documentation access, input scope and annotation budgets where 
 Before a control is labelled verified, its applicability, evidence requirements and expected outcomes must be checked against its source. Every demonstrated mapping update must pass regression cases and be activated without backend code deployment. Public/synthetic/private provenance and label-review state must remain inspectable.
 
 The complete application can be implemented and exercised locally using a declared source-backed corpus. Expanding vendor coverage or claiming expert-reviewed security correctness may require additional authorized examples and review. Those dependencies are reported as coverage limits rather than concealed behind an overall compliance score.
-
-## 9. Research record for this revision
-
-- **Commands:** `webcmd web fetch --url ...` against the NCIIPC hosts, NIST reference page and official Gemini documentation.
-- **Gemini sources read:** [English function calling](https://ai.google.dev/gemini-api/docs/function-calling?hl=en) and [structured outputs](https://ai.google.dev/gemini-api/docs/structured-output). Relevant sections establish application-executed calls, structured schemas and a documented stateless function-calling mode. Model/account compatibility remains untested.
-- **Failures/limits:** bare and `www` NCIIPC HTTPS connections timed out; NIST returned `FETCH_BLOCKED`; the initial Gemini function-calling URL returned a language redirect, resolved with `hl=en`. CLI extraction was bounded at its default length, and only relevant documentation sections were relied on. No benchmark corpus or authoritative control-pack download was obtained during this planning revision.
-- **Browser fallback:** none. No email was sent and no authenticated Gemini call was made.
-
-These results support the design and record what remains to acquire; they do not constitute a completed benchmark-content audit.

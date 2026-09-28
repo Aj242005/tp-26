@@ -6,6 +6,7 @@ import secrets
 from pathlib import Path
 
 from dotenv import dotenv_values, set_key
+from identity_config import social_providers
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -35,14 +36,17 @@ def main():
         ("auditor", "LOCAL_AUDITOR_PASSWORD", ["viewer", "auditor"], "00000000-0000-0000-0000-000000000001"),
         ("other", "LOCAL_OTHER_PASSWORD", roles, "00000000-0000-0000-0000-000000000002"),
     ):
+        if values.get("APP_ENV") == "production" and username != "admin":
+            continue
         users.append({"username": username, "enabled": True, "emailVerified": True,
                       "firstName": username.title(), "lastName": "Local", "email": f"{username}@localhost.test",
                       "credentials": [{"type": "password", "value": values[password_key], "temporary": False}],
                       "realmRoles": assigned, "attributes": {"tenant_id": [tenant]}})
-    realm = {"realm": "sih26155", "enabled": True, "registrationAllowed": False,
-             "sslRequired": "none", "bruteForceProtected": True, "failureFactor": 5,
+    realm = {"realm": values.get("OIDC_REALM") or "prooflane", "displayName": "Prooflane", "enabled": True, "registrationAllowed": False,
+             "sslRequired": "external" if origin.startswith("https://") else "none", "bruteForceProtected": True, "failureFactor": 5,
              "roles": {"realm": [{"name": role} for role in roles]}, "users": users,
-             "clients": [{"clientId": "sih26155-web", "enabled": True, "publicClient": False,
+             "identityProviders": social_providers(values),
+             "clients": [{"clientId": values.get("OIDC_CLIENT_ID") or "prooflane-web", "name": "Prooflane", "enabled": True, "publicClient": False,
                           "secret": values["OIDC_CLIENT_SECRET"], "standardFlowEnabled": True,
                           "directAccessGrantsEnabled": False,
                           "redirectUris": [origin + "/api/auth/callback"], "webOrigins": [origin],
@@ -64,7 +68,7 @@ def main():
         "actions": ["Admin", "Read", "Write", "List", "Tagging"]}]}
     (runtime / "s3.json").write_text(json.dumps(s3), encoding="utf-8")
     print("Local secrets and identity realm are ready. Passwords remain in .env.")
-    print("Login users: admin, auditor, other (separate organization).")
+    print("Login users:", ", ".join(user["username"] for user in users))
     print("Gemini configured:", bool(values.get("GEMINI_API_KEY") and values.get("GEMINI_MODEL")))
 
 

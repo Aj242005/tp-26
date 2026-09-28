@@ -2,7 +2,7 @@ services:
   api:
     environment:
       APP_ORIGIN: https://localhost:8443
-      OIDC_ISSUER_URL: https://localhost:8443/auth/realms/sih26155
+      OIDC_ISSUER_URL: https://localhost:8443/auth/realms/${OIDC_REALM:-prooflane}
   identity:
     environment:
       KC_HOSTNAME: https://localhost:8443/auth

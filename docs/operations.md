@@ -34,14 +34,14 @@ One laptop remains one failure domain. This release claims no host redundancy, m
 
 ```powershell
 uv run python scripts/backup.py create
-uv run python scripts/backup.py restore --file runtime/backups/<timestamp>.sihbackup --project sih26155-restore-check
+uv run python scripts/backup.py restore --file runtime/backups/<timestamp>.sihbackup --project prooflane-restore-check
 ```
 
 Backup pauses gateway/API/workers/maintenance/identity, dumps both databases, copies encrypted objects, verifies referenced plaintext hashes and encrypts the archive using the data key. Writers restart in a finally block. This tool serves small local installations, with a maximum 1 GiB compressed backup; larger installations need streaming backup infrastructure.
 
 Keep a separate protected copy of `.env`, especially DATA_ENCRYPTION_KEY and database/identity secrets. The archive deliberately excludes keys. Losing the data key prevents both artifact and backup recovery. Keep secrets/runtime material out of shared exports and general file synchronization.
 
-Restore refuses an existing target project or a name outside `sih26155-restore...`. It creates fresh volumes, restores the application/identity databases and objects, and verifies record counts and all referenced artifact hashes/decryption. It leaves the restored stack quiescent. Replay deletion requests recorded after the backup before opening access; run maintenance, then start restored services with their own origin/port and synchronize restored identity redirects. Never target the primary volumes for a rehearsal.
+Restore refuses an existing target project or a name outside `prooflane-restore...`. It creates fresh volumes, restores the application/identity databases and objects, and verifies record counts and all referenced artifact hashes/decryption. It leaves the restored stack quiescent. Replay deletion requests recorded after the backup before opening access; run maintenance, then start restored services with their own origin/port and synchronize restored identity redirects. Never target the primary volumes for a rehearsal.
 
 Recovery point is the last successful consistent backup. Backup retention is operator-managed. Keep deletion records until older backups expire: deletion in the live application cannot erase an offline backup.
 

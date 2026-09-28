@@ -22,18 +22,18 @@ def main(optional=False, selected_image=None):
     output.mkdir(exist_ok=True)
     flags = ["-f", "compose.yaml"] + (["-f", "compose.observability.yaml"] if optional else [])
     images = [selected_image] if selected_image else list(dict.fromkeys(run("compose", *flags, "config", "--images").splitlines()))
-    run("volume", "create", "sih26155-scan-cache")
-    helper = "sih26155-scan-transfer-" + uuid.uuid4().hex[:8]
-    run("run", "-d", "--name", helper, "--mount", "type=volume,source=sih26155-scan-cache,target=/cache",
+    run("volume", "create", "prooflane-scan-cache")
+    helper = "prooflane-scan-transfer-" + uuid.uuid4().hex[:8]
+    run("run", "-d", "--name", helper, "--mount", "type=volume,source=prooflane-scan-cache,target=/cache",
         "--entrypoint", "sh", SCANNER, "-c", "sleep 3600")
     inventory_path = output / "inventory.json"
     inventory = json.loads(inventory_path.read_text(encoding="utf-8")) if selected_image and inventory_path.exists() else []
     try:
         for image in images:
             label = image.split("/")[-1].split("@")[0].replace(":", "-")
-            if label == "sih26155-app-local":
+            if label in ("prooflane-app-local", "prooflane-app-local"):
                 label = "app"
-            elif label == "sih26155-web-local":
+            elif label in ("prooflane-web-local", "prooflane-web-local"):
                 label = "web"
             archive = output / "input-image.tar"
             run("image", "save", "--output", str(archive), image)
@@ -41,7 +41,7 @@ def main(optional=False, selected_image=None):
             run("cp", str(archive), helper + ":/cache/qualification-input.tar")
             common = ["run", "--rm", "--cpus", "1", "--memory", "1g", "--network", "none",
                       "--env", "TRIVY_SKIP_VERSION_CHECK=true",
-                      "--mount", "type=volume,source=sih26155-scan-cache,target=/cache",
+                      "--mount", "type=volume,source=prooflane-scan-cache,target=/cache",
                       "--mount", "type=bind,source=" + str(output) + ",target=/reports", SCANNER]
             run(*common, "image", "--timeout", "10m", "--parallel", "1", "--cache-dir", "/cache",
                 "--cache-backend", "memory", "--offline-scan", "--skip-db-update", "--skip-java-db-update",

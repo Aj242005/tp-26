@@ -72,7 +72,7 @@ try {
     await page.waitForTimeout(seconds * 1000);
   }
   await page.goto('/'); await page.getByRole('heading', { level: 1 }).waitFor();
-  await caption('SIH26155: a real local audit workspace. All evidence in this recording is synthetic.', 9);
+  await caption('Prooflane: a real local audit workspace. All evidence in this recording is synthetic.', 9);
   await page.goto('/devices'); await page.getByRole('table').waitFor();
   await caption('Preserve configuration snapshots, declare their scope, then select a policy for evaluation.', 10);
   await page.goto('/audits/' + id); await page.getByRole('tab', { name: 'Findings & evidence' }).waitFor();

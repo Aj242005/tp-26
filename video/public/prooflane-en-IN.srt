@@ -1,0 +1,171 @@
+1
+00:00:00,340 --> 00:00:03,356
+Prooflane checks router and firewall settings, flags security
+
+2
+00:00:03,356 --> 00:00:06,757
+risks, and shows the evidence behind every finding.
+
+3
+00:00:06,757 --> 00:00:08,194
+Here is how it works.
+
+4
+00:00:09,345 --> 00:00:12,854
+Different vendors use different configuration languages.
+
+5
+00:00:12,854 --> 00:00:15,556
+Reviewing them by hand makes security problems easy to
+
+6
+00:00:15,556 --> 00:00:16,158
+miss.
+
+7
+00:00:17,339 --> 00:00:19,520
+Upload saved device settings.
+
+8
+00:00:19,520 --> 00:00:23,364
+Add the device type, software version and file completeness.
+
+9
+00:00:23,364 --> 00:00:26,190
+Choose a security checklist, then start the audit.
+
+10
+00:00:27,348 --> 00:00:30,120
+In this sample, line five uses an old version
+
+11
+00:00:30,120 --> 00:00:32,999
+of secure remote access, SSH.
+
+12
+00:00:32,999 --> 00:00:35,304
+The rule requires version two.
+
+13
+00:00:35,304 --> 00:00:38,118
+Prooflane flags the mismatch and suggests a fix for
+
+14
+00:00:38,118 --> 00:00:39,116
+human review.
+
+15
+00:00:40,350 --> 00:00:43,510
+Missing or conflicting evidence stays unknown.
+
+16
+00:00:43,510 --> 00:00:45,893
+The coverage bar shows how much could actually be
+
+17
+00:00:45,893 --> 00:00:46,493
+checked.
+
+18
+00:00:48,350 --> 00:00:51,835
+Inspect findings beside the original settings, compare what was
+
+19
+00:00:51,835 --> 00:00:54,727
+found with what was expected, and download a shareable
+
+20
+00:00:54,727 --> 00:00:55,411
+report.
+
+21
+00:00:57,350 --> 00:01:00,369
+When a format is unfamiliar, Gemini consults approved
+
+22
+00:01:00,369 --> 00:01:02,946
+references and asks questions.
+
+23
+00:01:02,946 --> 00:01:05,912
+It proposes a rule for reading that format.
+
+24
+00:01:05,912 --> 00:01:08,402
+Tests and a human reviewer must approve it before
+
+25
+00:01:08,402 --> 00:01:09,044
+use.
+
+26
+00:01:11,342 --> 00:01:14,612
+Approved reading rules work without a code deployment.
+
+27
+00:01:14,612 --> 00:01:17,489
+Every audit keeps its original input and rule versions,
+
+28
+00:01:17,489 --> 00:01:19,182
+even when later rules change.
+
+29
+00:01:20,350 --> 00:01:23,139
+Explore the audit in three dimensions.
+
+30
+00:01:23,139 --> 00:01:25,978
+Select any stage to see the recorded evidence behind
+
+31
+00:01:25,978 --> 00:01:26,472
+it.
+
+32
+00:01:28,340 --> 00:01:31,237
+The interface sends audits to background workers.
+
+33
+00:01:31,237 --> 00:01:33,450
+A database keeps their history.
+
+34
+00:01:33,450 --> 00:01:35,922
+Encrypted storage protects files.
+
+35
+00:01:35,922 --> 00:01:38,135
+Access is controlled by role.
+
+36
+00:01:38,135 --> 00:01:41,173
+Optional AI helps investigate unfamiliar formats.
+
+37
+00:01:42,338 --> 00:01:46,339
+Twenty checks cover selected Cisco, Junos and FortiOS settings.
+
+38
+00:01:46,339 --> 00:01:49,539
+Synthetic tests covered sustained load and recovery.
+
+39
+00:01:49,539 --> 00:01:51,478
+Standards crosswalks support review;
+
+40
+00:01:51,478 --> 00:01:53,213
+they do not certify compliance.
+
+41
+00:01:54,350 --> 00:01:55,688
+Prooflane.
+
+42
+00:01:55,688 --> 00:01:57,372
+Trace the finding.
+
+43
+00:01:57,372 --> 00:01:58,681
+Trust the evidence.

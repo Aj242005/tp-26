@@ -24,3 +24,5 @@ runtime
 data/imports
 data/private
 *.log
+
+**/.vercel

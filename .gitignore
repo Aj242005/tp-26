@@ -19,8 +19,11 @@ playwright-report/
 test-results/
 .auth/
 runtime/
+.vercel/
 data/imports/
 data/private/
 *.log
 .DS_Store
 Thumbs.db
+
+*.tsbuildinfo

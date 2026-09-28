@@ -20,7 +20,7 @@ Local Docker application on ordinary laptops. Hosted Gemini inference uses the u
 
 ## Capabilities and Constraints
 
-Single/bulk upload, immutable audits, source-linked findings, mapping tests and review, multiple framework crosswalks, PDFs, tenant isolation and durable processing. Policy content and vendor support are declared rather than universal. No automatic live-device writes. The organizer supplied references, not a dataset.
+Single/bulk upload, immutable audits, source-linked findings, mapping tests and review, multiple framework crosswalks, PDFs, tenant isolation and durable processing. Policy content and vendor support are declared rather than universal. No automatic live-device writes. Included configurations are synthetic.
 
 ## Evidence on Hand
 

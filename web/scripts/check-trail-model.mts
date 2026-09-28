@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import { auditStages } from '../src/trail-model.ts';
+import type { RecordItem } from '../src/api.ts';
+
+const base = { id: 'synthetic', name: 'Synthetic configuration', kind: 'audit', created_at: '2026-09-28T10:00:00Z', updated_at: '2026-09-28T10:00:00Z', input_sha256: 'synthetic-hash', status: 'queued', progress: 'Waiting for a worker', policy: { name: 'Synthetic baseline', framework: 'Baseline', version: 'test', scope: 'Synthetic tests only', rules: [] } } satisfies RecordItem;
+const stage = (audit: RecordItem, id: string) => auditStages(audit).find(item => item.id === id)!;
+assert.equal(stage(base, 'normalize').status, 'Queued');
+assert.equal(stage(base, 'evaluate').state, 'pending');
+assert.equal(stage(base, 'report').state, 'pending');
+assert.equal(stage(base, 'investigate').state, 'optional');
+const complete = { ...base, status: 'complete', findings: [], coverage: 50, counts: { pass: 1, fail: 1, insufficient_evidence: 2 }, normalization: { facts: {}, unrecognized: [], unrecognized_count: 1 }, report: { key: 'synthetic', size: 1024, sha256: 'synthetic-pdf' } } satisfies RecordItem;
+assert.equal(stage(complete, 'normalize').state, 'recorded');
+assert.equal(stage(complete, 'evaluate').state, 'attention', 'Completed work must not make failed/unknown checks look successful');
+assert.equal(stage(complete, 'report').state, 'recorded');
+const failed = { ...complete, status: 'failed', failed_stage: 'learn', error: 'Synthetic provider failure' };
+assert.equal(stage(failed, 'investigate').state, 'failed');
+assert.equal(stage(failed, 'report').state, 'recorded', 'A failed investigation must preserve earlier report evidence');
+assert.equal(stage({ ...failed, status: 'retry' }, 'investigate').status, 'Retry queued');
+const reviewed = { ...complete, status: 'waiting_review', investigation: { summary: 'Synthetic proposal', model: 'synthetic', tokens: 10, questions: [], trace: [] } };
+assert.equal(stage(reviewed, 'review').status, 'Review required', 'Tool completion must not imply human approval');
+assert.equal(stage({ ...complete, status: 'cancelled', failed_stage: undefined }, 'evaluate').state, 'attention', 'Do not guess which stage was cancelled');
+console.log('Audit trail state checks passed: queued, completed with gaps, failed/retried investigation, review gate and ambiguous cancellation.');

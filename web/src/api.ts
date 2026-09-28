@@ -1,5 +1,5 @@
 export type Finding = {
-  id: string; title: string; verdict: string; severity: string; observed: unknown; expected: unknown;
+  id: string; title: string; verdict: string; severity: string; observed: unknown; expected: unknown; fact?: string;
   source: string; rationale: string; remediation: string | null; remediation_note: string;
   evidence: { value: unknown; lines: number[]; reason: string; origin: string } | null;
 };
@@ -8,11 +8,20 @@ export type RecordItem = {
   firmware?: string; pending_delete?: boolean; status?: string; synthetic?: boolean; source?: string; device_id?: string;
   coverage?: number; pass_rate?: number | null; counts?: Record<string, number>; findings?: Finding[];
   progress?: string; error?: string; policy?: Policy; policy_id?: string | null; report?: { key: string; sha256: string; size: number };
-  normalization?: { unrecognized: { line: number; text: string }[]; unrecognized_count: number };
+  input_sha256?: string; evaluated_at?: string; completed_at?: string; failed_stage?: string | null;
+  mapping_snapshot?: { id: string; version: string; spec: Omit<Mapping, 'cases'> }[];
+  normalization?: { unrecognized: { line: number; text: string }[]; unrecognized_count: number;
+    native_version?: string; complete_declared?: boolean; facts?: Record<string, NonNullable<Finding['evidence']> & { scope?: string }> };
   tests?: { passed: boolean; eligible: boolean; results: { passed: boolean; expected: unknown; actual: unknown }[] };
   spec?: Mapping | Policy; version?: string; authority?: string; url?: string; content?: string;
-  investigation?: { summary: string; model: string; tokens: number; questions: { question: string; reason: string }[]; trace: { step: number; tool: string }[] };
+  investigation?: Investigation;
+  agent_checkpoint?: Omit<Investigation, 'summary'>;
 };
+export type Investigation = { summary: string; model: string; tokens: number;
+  questions: { question: string; reason: string }[];
+  trace: { step: number; tool: string; result?: { error?: string; status?: string; passed?: boolean; eligible?: boolean;
+    sources?: { id: string; name: string; version: string; excerpt: string }[];
+    results?: { passed: boolean; expected: unknown; actual: unknown }[] } }[] };
 export type Policy = { name: string; framework: string; version: string; scope: string; rules: unknown[] };
 export type Mapping = {
   name: string; vendor: string; firmware: string; fact: string; selector_type: string; selector: string;

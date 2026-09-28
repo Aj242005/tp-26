@@ -9,4 +9,4 @@ check() {
 }
 check 9000 /auth/health/ready
 # The gateway must wait for the imported realm and its signing keys, not only the process.
-check 8080 /auth/realms/sih26155/protocol/openid-connect/certs
+check 8080 /auth/realms/${OIDC_REALM:-prooflane}/protocol/openid-connect/certs

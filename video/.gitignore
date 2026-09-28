@@ -1,0 +1,9 @@
+node_modules/
+build/
+.cache/
+*.log
+tools/
+voice-reference/
+public/voice-*.wav
+public/master.wav
+public/score.wav

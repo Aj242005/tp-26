@@ -1,0 +1,86 @@
+[
+  {
+    "id": "introduction",
+    "start": 0,
+    "duration": 9,
+    "title": "Introducing Prooflane",
+    "voice": "Prooflane checks router and firewall settings, flags security risks, and shows the evidence behind every finding. Here is how it works."
+  },
+  {
+    "id": "problem",
+    "start": 9,
+    "duration": 8,
+    "title": "One network. Many languages.",
+    "voice": "Different vendors use different configuration languages. Reviewing them by hand makes security problems easy to miss."
+  },
+  {
+    "id": "workflow",
+    "start": 17,
+    "duration": 10,
+    "title": "Snapshot to assessment.",
+    "voice": "Upload saved device settings. Add the device type, software version and file completeness. Choose a security checklist, then start the audit."
+  },
+  {
+    "id": "evidence",
+    "start": 27,
+    "duration": 13,
+    "title": "Show me the evidence.",
+    "voice": "In this sample, line five uses an old version of secure remote access, SSH. The rule requires version two. Prooflane flags the mismatch and suggests a fix for human review."
+  },
+  {
+    "id": "unknown",
+    "start": 40,
+    "duration": 8,
+    "title": "Unknown is a useful answer.",
+    "voice": "Missing or conflicting evidence stays unknown. The coverage bar shows how much could actually be checked."
+  },
+  {
+    "id": "product",
+    "start": 48,
+    "duration": 9,
+    "title": "Inspect. Explain. Export.",
+    "voice": "Inspect findings beside the original settings, compare what was found with what was expected, and download a shareable report."
+  },
+  {
+    "id": "learning",
+    "start": 57,
+    "duration": 14,
+    "title": "Unfamiliar syntax? Build understanding.",
+    "voice": "When a format is unfamiliar, Gemini consults approved references and asks questions. It proposes a rule for reading that format. Tests and a human reviewer must approve it before use."
+  },
+  {
+    "id": "versions",
+    "start": 71,
+    "duration": 9,
+    "title": "New understanding. Preserved history.",
+    "voice": "Approved reading rules work without a code deployment. Every audit keeps its original input and rule versions, even when later rules change."
+  },
+  {
+    "id": "trail",
+    "start": 80,
+    "duration": 8,
+    "title": "Follow the audit in 3D.",
+    "voice": "Explore the audit in three dimensions. Select any stage to see the recorded evidence behind it."
+  },
+  {
+    "id": "architecture",
+    "start": 88,
+    "duration": 14,
+    "title": "Built for accountable processing.",
+    "voice": "The interface sends audits to background workers. A database keeps their history. Encrypted storage protects files. Access is controlled by role. Optional AI helps investigate unfamiliar formats."
+  },
+  {
+    "id": "scope",
+    "start": 102,
+    "duration": 12,
+    "title": "Clear scope. Demonstrated resilience.",
+    "voice": "Twenty checks cover selected Cisco, Junos and FortiOS settings. Synthetic tests covered sustained load and recovery. Standards crosswalks support review; they do not certify compliance."
+  },
+  {
+    "id": "close",
+    "start": 114,
+    "duration": 6,
+    "title": "Trace the finding. Trust the evidence.",
+    "voice": "Prooflane. Trace the finding. Trust the evidence."
+  }
+]

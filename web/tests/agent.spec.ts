@@ -18,7 +18,7 @@ test('configured Gemini investigates synthetic unknown syntax and persists revie
   const headers = { 'X-CSRF-Token': me.csrf };
   const source = await page.request.post('/api/sources', { headers, data: {
     name: 'Synthetic qualification vendor reference', authority: 'Team-authored synthetic dialect', version: 'test-v1',
-    permission: 'Authored for this application test; not an organizer or vendor dataset',
+    permission: 'Authored for this application test; not a vendor dataset',
     content: 'Synthetic test dialect only: secure-shell-version N selects the SSH protocol version as an integer. Version 2 is the declared secure baseline. This command has device scope. A command whose prefix is secure-shell-version-extra is unrelated and does not establish an SSH version. No other native firmware semantics are specified by this synthetic document.' } });
   expect(source.status()).toBe(201);
   const records = await (await page.request.get('/api/records?kind=audit&page_size=100')).json();

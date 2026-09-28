@@ -1,0 +1,8 @@
+* { box-sizing: border-box; }
+h1,h2,p { margin:0; }
+h1 { font-size:78px; font-weight:580; letter-spacing:-.03em; line-height:1.12; }
+.mono,.file-code { font-family:'Geist Mono Variable',monospace; }
+.file { background:#151b26; border:1px solid #354159; border-radius:12px; overflow:hidden; }
+.file-head { display:flex; align-items:center; gap:16px; padding:21px 27px; border-bottom:1px solid #354159; font-size:26px; }
+.file-code { padding:27px; font-size:27px; line-height:1.8; white-space:pre; color:#d5def0; }
+.file-code:has(> div:nth-child(7)) { line-height:1.25; }

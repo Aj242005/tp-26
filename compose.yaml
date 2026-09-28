@@ -1,6 +1,6 @@
-name: sih26155
+name: ${COMPOSE_PROJECT_NAME:-prooflane}
 x-service: &service
-  image: sih26155-app:local
+  image: prooflane-app:local
   build: .
   env_file: .env
   restart: unless-stopped
@@ -13,12 +13,12 @@ x-service: &service
     APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8185}
     LLM_ENABLED: ${LLM_ENABLED:-false}
     GEMINI_EGRESS_GATEWAY: http://gemini-egress
-    DATABASE_URL: postgresql+psycopg://sih_app:${APP_DB_PASSWORD}@database:5432/sih26155
-    WORKER_DATABASE_URL: postgresql+psycopg://sih_worker:${WORKER_DB_PASSWORD}@database:5432/sih26155
+    DATABASE_URL: postgresql+psycopg://${APP_DB_USER:-prooflane_app}:${APP_DB_PASSWORD}@database:5432/${POSTGRES_DB:-prooflane}
+    WORKER_DATABASE_URL: postgresql+psycopg://${WORKER_DB_USER:-prooflane_worker}:${WORKER_DB_PASSWORD}@database:5432/${POSTGRES_DB:-prooflane}
     REDIS_URL: redis://:${REDIS_PASSWORD}@cache:6379/0
     S3_ENDPOINT: http://object-store:9000
-    OIDC_INTERNAL_URL: http://identity:8080/auth/realms/sih26155
-    OIDC_ISSUER_URL: ${APP_ORIGIN:-http://localhost:8185}/auth/realms/sih26155
+    OIDC_INTERNAL_URL: http://identity:8080/auth/realms/${OIDC_REALM:-prooflane}
+    OIDC_ISSUER_URL: ${APP_ORIGIN:-http://localhost:8185}/auth/realms/${OIDC_REALM:-prooflane}
   depends_on:
     migrate: {condition: service_completed_successfully}
     cache: {condition: service_healthy}
@@ -28,16 +28,18 @@ services:
     image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
     restart: unless-stopped
     environment:
-      POSTGRES_DB: sih26155
+      POSTGRES_DB: ${POSTGRES_DB:-prooflane}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       APP_DB_PASSWORD: ${APP_DB_PASSWORD}
       WORKER_DB_PASSWORD: ${WORKER_DB_PASSWORD}
       KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      APP_DB_USER: ${APP_DB_USER:-prooflane_app}
+      WORKER_DB_USER: ${WORKER_DB_USER:-prooflane_worker}
     volumes: [postgres:/var/lib/postgresql/data, ./ops/init-db.sh:/docker-entrypoint-initdb.d/01-users.sh:ro]
     networks: [data]
     healthcheck:
-      test: [CMD-SHELL, "pg_isready -U postgres -d sih26155"]
+      test: [CMD-SHELL, 'pg_isready -U postgres -d "$$POSTGRES_DB"']
       interval: 5s
       timeout: 3s
       retries: 20
@@ -77,12 +79,13 @@ services:
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HEALTH_ENABLED: "true"
+      OIDC_REALM: ${OIDC_REALM:-prooflane}
       # One local identity replica; avoid stale cluster discovery on local restarts.
       KC_CACHE: local
       JAVA_OPTS_KC_HEAP: -Xms128m -Xmx512m
     volumes: [./runtime/realm.json:/opt/keycloak/data/import/realm.json:ro, ./ops/identity-health.sh:/opt/keycloak/health.sh:ro]
     depends_on: {database: {condition: service_healthy}}
-    networks: [application, data]
+    networks: [application, data, outbound]
     mem_limit: 1024m
     healthcheck:
       test: [CMD, bash, /opt/keycloak/health.sh]
@@ -96,7 +99,7 @@ services:
     command: [alembic, upgrade, head]
     environment:
       <<: *environment
-      MIGRATION_DATABASE_URL: postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/sih26155
+      MIGRATION_DATABASE_URL: postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB:-prooflane}
     depends_on: {database: {condition: service_healthy}}
   api:
     <<: *service
@@ -122,7 +125,7 @@ services:
     stop_grace_period: 90s
   gateway:
     build: {context: ., dockerfile: web/Dockerfile}
-    image: sih26155-web:local
+    image: prooflane-web:local
     restart: unless-stopped
     ports: ["127.0.0.1:${APP_PORT:-8185}:8080"]
     depends_on: {api: {condition: service_healthy}, identity: {condition: service_healthy}}

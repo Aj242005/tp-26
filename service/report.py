@@ -13,7 +13,7 @@ def pdf_report(audit_id: str, data: dict, device: dict):
                                  leftMargin=18 * mm, rightMargin=18 * mm, topMargin=18 * mm, bottomMargin=18 * mm)
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name="SmallCode", fontName="Courier", fontSize=8, leading=11, wordWrap="CJK"))
-    body = [Paragraph("Configuration audit", styles["Title"]),
+    body = [Paragraph("Prooflane configuration audit", styles["Title"]),
             Paragraph(escape(data["name"]), styles["Heading2"]),
             Paragraph(escape(f"Audit {audit_id} · {data.get('completed_at', '')}"), styles["Normal"]),
             Spacer(1, 10)]
@@ -49,7 +49,7 @@ def pdf_report(audit_id: str, data: dict, device: dict):
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor("#596477"))
-        canvas.drawString(18 * mm, 10 * mm, "SIH26155 · Evidence-backed technical assessment")
+        canvas.drawString(18 * mm, 10 * mm, "Prooflane · Evidence-backed technical assessment")
         canvas.drawRightString(192 * mm, 10 * mm, str(doc.page))
         canvas.restoreState()
 

@@ -1,5 +1,6 @@
-* text=auto
-*.sh text eol=lf
-*.py text eol=lf
-*.yaml text eol=lf
-*.json text eol=lf
+* text=auto eol=lf
+*.pdf binary
+*.pptx binary
+*.webm binary
+*.mp4 binary
+*.png binary

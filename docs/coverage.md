@@ -1,6 +1,6 @@
 # Declared coverage and evidence
 
-All shipped configurations are team-authored synthetic examples. The organizer supplied authority names, not a downloadable dataset. No real-vendor accuracy, novelty superiority or certification result is claimed.
+All shipped configurations are team-authored synthetic examples. No real-vendor accuracy, novelty superiority or certification result is claimed.
 
 | Fixture | Interpreted family | Pass | Fail | Need evidence | Evaluated coverage |
 | --- | --- | ---: | ---: | ---: | ---: |

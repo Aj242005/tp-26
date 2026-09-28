@@ -1,0 +1,53 @@
+{
+	email {$ACME_EMAIL}
+	acme_ca https://acme-v02.api.letsencrypt.org/directory
+	admin off
+}
+
+{$PUBLIC_DOMAIN} {
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		X-Frame-Options DENY
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	# Preserve this order: private endpoint rejection must precede proxy handlers.
+	route {
+		# Keep operational metrics and the identity administrator console private.
+		@private path /api/metrics /api/metrics/* /auth/admin /auth/admin/*
+		respond @private 404
+
+		# Caddy routes API and identity directly so the external HTTPS scheme and
+		# original client IP reach them. The local NGINX gateway remains unchanged.
+		@upload path /api/devices
+		handle @upload {
+			request_body {
+				max_size 100MB
+			}
+			reverse_proxy api:8000 {
+				header_up Host api
+			}
+		}
+		handle /api/* {
+			request_body {
+				max_size 2MB
+			}
+			reverse_proxy api:8000 {
+				header_up Host api
+			}
+		}
+		handle /auth/* {
+			request_body {
+				max_size 2MB
+			}
+			reverse_proxy identity:8080
+		}
+		handle {
+			reverse_proxy gateway:8080
+		}
+	}
+}

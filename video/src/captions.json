@@ -1,0 +1,217 @@
+[
+  {
+    "start": 0.3403679653679654,
+    "end": 3.3558340097402595,
+    "text": "Prooflane checks router and firewall settings, flags security"
+  },
+  {
+    "start": 3.3558340097402595,
+    "end": 6.756869437229436,
+    "text": "risks, and shows the evidence behind every finding."
+  },
+  {
+    "start": 6.756869437229436,
+    "end": 8.193927667748916,
+    "text": "Here is how it works."
+  },
+  {
+    "start": 9.34483870967742,
+    "end": 12.853870967741935,
+    "text": "Different vendors use different configuration languages."
+  },
+  {
+    "start": 12.853870967741935,
+    "end": 15.556378716129032,
+    "text": "Reviewing them by hand makes security problems easy to"
+  },
+  {
+    "start": 15.556378716129032,
+    "end": 16.157993232258065,
+    "text": "miss."
+  },
+  {
+    "start": 17.33938814531549,
+    "end": 19.51993686424474,
+    "text": "Upload saved device settings."
+  },
+  {
+    "start": 19.51993686424474,
+    "end": 23.364372609942638,
+    "text": "Add the device type, software version and file completeness."
+  },
+  {
+    "start": 23.364372609942638,
+    "end": 26.189979388145314,
+    "text": "Choose a security checklist, then start the audit."
+  },
+  {
+    "start": 27.34801587301587,
+    "end": 30.120272321428573,
+    "text": "In this sample, line five uses an old version"
+  },
+  {
+    "start": 30.120272321428573,
+    "end": 32.99928373809524,
+    "text": "of secure remote access, SSH."
+  },
+  {
+    "start": 32.99928373809524,
+    "end": 35.304331845238096,
+    "text": "The rule requires version two."
+  },
+  {
+    "start": 35.304331845238096,
+    "end": 38.118122519841265,
+    "text": "Prooflane flags the mismatch and suggests a fix for"
+  },
+  {
+    "start": 38.118122519841265,
+    "end": 39.11569742460317,
+    "text": "human review."
+  },
+  {
+    "start": 40.35,
+    "end": 43.50975,
+    "text": "Missing or conflicting evidence stays unknown."
+  },
+  {
+    "start": 43.50975,
+    "end": 45.893208,
+    "text": "The coverage bar shows how much could actually be"
+  },
+  {
+    "start": 45.893208,
+    "end": 46.492791,
+    "text": "checked."
+  },
+  {
+    "start": 48.35,
+    "end": 51.835166,
+    "text": "Inspect findings beside the original settings, compare what was"
+  },
+  {
+    "start": 51.835166,
+    "end": 54.727125,
+    "text": "found with what was expected, and download a shareable"
+  },
+  {
+    "start": 54.727125,
+    "end": 55.411457999999996,
+    "text": "report."
+  },
+  {
+    "start": 57.35,
+    "end": 60.369083,
+    "text": "When a format is unfamiliar, Gemini consults approved"
+  },
+  {
+    "start": 60.369083,
+    "end": 62.946166,
+    "text": "references and asks questions."
+  },
+  {
+    "start": 62.946166,
+    "end": 65.912291,
+    "text": "It proposes a rule for reading that format."
+  },
+  {
+    "start": 65.912291,
+    "end": 68.401708,
+    "text": "Tests and a human reviewer must approve it before"
+  },
+  {
+    "start": 68.401708,
+    "end": 69.043666,
+    "text": "use."
+  },
+  {
+    "start": 71.34206174200662,
+    "end": 74.61182599779492,
+    "text": "Approved reading rules work without a code deployment."
+  },
+  {
+    "start": 74.61182599779492,
+    "end": 77.48875543550166,
+    "text": "Every audit keeps its original input and rule versions,"
+  },
+  {
+    "start": 77.48875543550166,
+    "end": 79.18209206174201,
+    "text": "even when later rules change."
+  },
+  {
+    "start": 80.35,
+    "end": 83.139,
+    "text": "Explore the audit in three dimensions."
+  },
+  {
+    "start": 83.139,
+    "end": 85.977958,
+    "text": "Select any stage to see the recorded evidence behind"
+  },
+  {
+    "start": 85.977958,
+    "end": 86.471583,
+    "text": "it."
+  },
+  {
+    "start": 88.34044715447155,
+    "end": 91.23667809959349,
+    "text": "The interface sends audits to background workers."
+  },
+  {
+    "start": 91.23667809959349,
+    "end": 93.44995705284553,
+    "text": "A database keeps their history."
+  },
+  {
+    "start": 93.44995705284553,
+    "end": 95.92191577235772,
+    "text": "Encrypted storage protects files."
+  },
+  {
+    "start": 95.92191577235772,
+    "end": 98.1351956300813,
+    "text": "Access is controlled by role."
+  },
+  {
+    "start": 98.1351956300813,
+    "end": 101.17334132113821,
+    "text": "Optional AI helps investigate unfamiliar formats."
+  },
+  {
+    "start": 102.33757716049382,
+    "end": 106.33864920910494,
+    "text": "Twenty checks cover selected Cisco, Junos and FortiOS settings."
+  },
+  {
+    "start": 106.33864920910494,
+    "end": 109.53930191743827,
+    "text": "Synthetic tests covered sustained load and recovery."
+  },
+  {
+    "start": 109.53930191743827,
+    "end": 111.4782602507716,
+    "text": "Standards crosswalks support review;"
+  },
+  {
+    "start": 111.4782602507716,
+    "end": 113.21261955632716,
+    "text": "they do not certify compliance."
+  },
+  {
+    "start": 114.35,
+    "end": 115.687708,
+    "text": "Prooflane."
+  },
+  {
+    "start": 115.687708,
+    "end": 117.372041,
+    "text": "Trace the finding."
+  },
+  {
+    "start": 117.372041,
+    "end": 118.681374,
+    "text": "Trust the evidence."
+  }
+]

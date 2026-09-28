@@ -18,6 +18,24 @@ from service.db import LoginSession, LoginState, digest, event, now, transaction
 ROLES = {"viewer", "auditor", "reviewer", "admin"}
 
 
+def providers():
+    cfg = settings()
+    return [{"id": alias, "name": name,
+             "configured": bool(getattr(cfg, alias + "_client_id") and getattr(cfg, alias + "_client_secret"))}
+            for alias, name in (("google", "Google"), ("github", "GitHub"))]
+
+
+def provider_hint(provider):
+    if not provider:
+        return {}
+    matches = [item for item in providers() if item["id"] == provider]
+    if not matches:
+        raise HTTPException(400, "Choose Google, GitHub, or workspace sign-in")
+    if not matches[0]["configured"]:
+        raise HTTPException(503, "This sign-in provider has not been configured by the workspace administrator")
+    return {"kc_idp_hint": provider}
+
+
 def seal():
     return Fernet(base64.urlsafe_b64encode(hashlib.sha256(settings().app_secret_key.encode()).digest()))
 
@@ -52,12 +70,13 @@ def require(request: Request, role="viewer"):
 
 async def login(request: Request):
     cfg = settings()
+    hint = provider_hint(request.query_params.get("provider"))
     state, nonce, verifier, binding = (secrets.token_urlsafe(32) for _ in range(4))
     async with AsyncOAuth2Client(cfg.oidc_client_id, cfg.oidc_client_secret, scope="openid profile email",
                                  redirect_uri=cfg.app_origin + "/api/auth/callback",
                                  code_challenge_method="S256") as client:
         url, _ = client.create_authorization_url(cfg.oidc_issuer_url + "/protocol/openid-connect/auth",
-                                                 state=state, nonce=nonce, code_verifier=verifier)
+                                                 state=state, nonce=nonce, code_verifier=verifier, **hint)
     payload = {"nonce": nonce, "verifier": verifier, "binding": digest(binding)}
     with transaction() as db:
         db.add(LoginState(id=digest(state), data={"sealed": seal().encrypt(json.dumps(payload).encode()).decode()},
@@ -99,11 +118,13 @@ async def callback(request: Request):
     except Exception as exc:
         raise HTTPException(502, "Identity verification failed. Check the local identity service") from exc
     tenant = claims.get("tenant_id", "")
-    if tenant not in (cfg.default_tenant_id, "00000000-0000-0000-0000-000000000002"):
-        raise HTTPException(403, "No authorized organization is assigned to this account")
     roles = sorted(ROLES.intersection(claims.get("roles", [])))
-    if not roles:
-        raise HTTPException(403, "No workspace role is assigned to this account")
+    if tenant not in (cfg.default_tenant_id, "00000000-0000-0000-0000-000000000002") or not roles:
+        response = RedirectResponse("/?access=pending", status_code=302)
+        response.delete_cookie("sih_login", path="/api/auth")
+        # An account switch must not leave the previous identity visible as the new one.
+        response.delete_cookie("sih_session", path="/")
+        return response
     session_token = secrets.token_urlsafe(40)
     profile = {"subject": claims["sub"], "name": claims.get("name", claims.get("preferred_username", "User")),
                "username": claims.get("preferred_username", ""), "roles": roles,

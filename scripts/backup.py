@@ -40,7 +40,7 @@ def backup(project):
     try:
         before = json.loads(run(project, "run", "--rm", "--no-deps", "api", "python", "-m", "service.snapshot", "verify"))
         parts = {database + ".dump": run(project, "exec", "-T", "database", "pg_dump", "-U", "postgres", "-Fc", database)
-                 for database in ("sih26155", "keycloak")}
+                 for database in (CONFIG.get("POSTGRES_DB", "prooflane"), "keycloak")}
         parts["objects.zip"] = run(project, "run", "--rm", "--no-deps", "api", "python", "-m", "service.snapshot", "export")
         parts["verification.json"] = json.dumps(before).encode()
         manifest = {"format": 1, "created_at": datetime.now(UTC).isoformat(), "key_fingerprint": hashlib.sha256(key()).hexdigest()[:16],
@@ -53,7 +53,7 @@ def backup(project):
         if buffer.tell() > 1024 * 1024 * 1024:
             raise RuntimeError("This local backup tool is limited to 1 GiB; use streaming storage backups for larger data")
         nonce = os.urandom(12)
-        sealed = b"SIHB1" + nonce + AESGCM(key()).encrypt(nonce, buffer.getvalue(), b"sih26155-backup-v1")
+        sealed = b"SIHB1" + nonce + AESGCM(key()).encrypt(nonce, buffer.getvalue(), CONFIG.get("BACKUP_CONTEXT", "prooflane-backup-v1").encode())
         directory = ROOT / "runtime" / "backups"
         directory.mkdir(parents=True, exist_ok=True)
         path = directory / (datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + ".sihbackup")
@@ -65,8 +65,8 @@ def backup(project):
 
 
 def restore(path, project, port):
-    if not re.fullmatch(r"sih26155-restore[a-z0-9-]*", project):
-        raise ValueError("Restore requires a separate project named sih26155-restore...")
+    if not re.fullmatch(r"prooflane-restore[a-z0-9-]*", project):
+        raise ValueError("Restore requires a separate project named prooflane-restore...")
     existing = subprocess.run(["docker", "ps", "-a", "-q", "--filter", "label=com.docker.compose.project=" + project],
                                capture_output=True, check=True).stdout.strip()
     if existing:
@@ -75,7 +75,7 @@ def restore(path, project, port):
     blob = path.read_bytes()
     if not blob.startswith(b"SIHB1"):
         raise ValueError("Unsupported backup format")
-    plaintext = AESGCM(key()).decrypt(blob[5:17], blob[17:], b"sih26155-backup-v1")
+    plaintext = AESGCM(key()).decrypt(blob[5:17], blob[17:], CONFIG.get("BACKUP_CONTEXT", "prooflane-backup-v1").encode())
     with zipfile.ZipFile(io.BytesIO(plaintext)) as archive:
         manifest = json.loads(archive.read("manifest.json"))
         parts = {name: archive.read(name) for name in manifest["sha256"]}
@@ -84,7 +84,7 @@ def restore(path, project, port):
                 raise ValueError("Backup integrity check failed")
     ENV.update(APP_PORT=str(port), APP_ORIGIN=f"http://localhost:{port}", LLM_ENABLED="false")
     run(project, "up", "-d", "--wait", "database", "cache", "object-store")
-    for database in ("sih26155", "keycloak"):
+    for database in (CONFIG.get("POSTGRES_DB", "prooflane"), "keycloak"):
         owner = ["--role=keycloak"] if database == "keycloak" else []
         run(project, "exec", "-T", "database", "pg_restore", "-U", "postgres", "--clean", "--if-exists",
             "--no-owner", *owner, "-d", database, content=parts[database + ".dump"])
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["create", "restore"])
     parser.add_argument("--file", type=Path)
-    parser.add_argument("--project", default="sih26155")
+    parser.add_argument("--project", default=CONFIG.get("COMPOSE_PROJECT_NAME", "prooflane"))
     parser.add_argument("--port", type=int, default=8186)
     arguments = parser.parse_args()
     if arguments.action == "create":

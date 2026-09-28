@@ -36,7 +36,7 @@ def architecture():
         pdf.drawString(40, height - 50, heading)
         pdf.setFont("Helvetica", 10)
         pdf.drawString(
-            40, height - 76, "SIH26155  |  AI-Driven Multi-Vendor Network Security Compliance Auditor"
+            40, height - 76, "PROOFLANE  |  Configuration Evidence and Review Workspace"
         )
         pdf.setFillColor(HexColor("#52627a"))
         pdf.setFont("Helvetica", 9)
@@ -91,7 +91,7 @@ def architecture():
             "20 team-authored technical checks; initial IOS/IOS-XE, Junos set and FortiOS subsets.",
             "Text/JSON/XML mappings have fixed selectors and types; generated code is never executed.",
             "Unknown, conflicting or unsupported effective settings never silently become a pass.",
-            "The organizer supplied a reference list, not a dataset. Shipped samples are synthetic.",
+            "Shipped configuration samples are synthetic; reference documents require authorized use.",
             "Framework selections are candidate crosswalks, not full certified CIS/NIST/STIG/ISO packs.",
         ],
     )
@@ -153,7 +153,7 @@ def architecture():
             f"Worker recovery: {measured('worker-recovery-result.json', 'recovery_seconds')} seconds; accepted work completed.",
             f"Restore rehearsal: {measured('restore-result.json', 'seconds')} seconds; plaintext artifact integrity checked.",
             f"Deterministic throughput: {measured('benchmark-result.json', 'configs_per_minute')} configurations/minute.",
-            f"Metadata p95: {measured('load-result.json', 'p95_ms')} ms. Full conditions and caveats: docs/verification.md.",
+            f"One-hour soak: {measured('soak-final.json', 'statuses.200')} successful reads; p95 {measured('soak-final.json', 'p95_ms')} ms. See docs/verification.md.",
         ],
     )
     block(
@@ -164,6 +164,7 @@ def architecture():
             "Controlled comparisons and ablations before any accuracy or novelty-superiority claim.",
             "Operational validation of proposed changes; no device commands are automatically applied.",
             "Future hosting requires real membership lifecycle, key rotation and host-level redundancy.",
+            "Upstream image findings remain open; assessed exposure is in docs/dependency-review.md.",
         ],
     )
     pdf.save()
@@ -176,7 +177,7 @@ def presentation():
     content = [
         (
             "Evidence before verdicts",
-            "SIH26155 / Multi-vendor network security compliance auditing",
+            "Prooflane / Multi-vendor network security compliance auditing",
             [
                 "Heterogeneous syntax creates consequential uncertainty.",
                 "The application keeps unknown settings visible.",
@@ -211,7 +212,7 @@ def presentation():
                 "Valkey outage: reads available, writes refused. API replica-loss reads succeeded.",
                 f"Worker recovery: {measured('worker-recovery-result.json', 'recovery_seconds')} seconds; accepted work completed.",
                 f"Fresh-volume restore: {measured('restore-result.json', 'seconds')} seconds; hashes verified.",
-                f"Throughput: {measured('benchmark-result.json', 'configs_per_minute')} configs/min; metadata p95: {measured('load-result.json', 'p95_ms')} ms.",
+                f"{measured('benchmark-result.json', 'configs_per_minute')} configs/min; one-hour metadata p95 {measured('soak-final.json', 'p95_ms')} ms ({measured('soak-final.json', 'statuses.200')} successful reads).",
             ],
         ),
         (
@@ -219,10 +220,10 @@ def presentation():
             "Working software, reviewable evidence and explicit limits",
             [
                 "20 team technical checks; declared IOS, Junos set and FortiOS subsets.",
-                "Synthetic examples. The organizer supplied references, not a dataset.",
+                "Synthetic examples; independently reviewed vendor labels remain future work.",
                 "Candidate framework crosswalks; no certification or universal vendor claim.",
                 "No automatic changes to live devices. One host is one failure domain.",
-                "Next evidence: expert labels, exact editions, operational checks and fair comparisons.",
+                "Open: upstream image findings; expert labels, exact editions and fair comparisons.",
             ],
         ),
     ]
@@ -241,7 +242,7 @@ def presentation():
             paragraph.font.bold = bold
             paragraph.font.color.rgb = RGBColor.from_string(color)
 
-        text(0.65, 0.35, 11, 0.4, "SIH26155  /  CONFIGURATION AUDITOR", 12, "375C9D", True)
+        text(0.65, 0.35, 11, 0.4, "PROOFLANE  /  EVIDENCE CONSOLE", 12, "375C9D", True)
         text(0.65, 1.05, 12, 1.05, heading, 34, bold=True)
         text(0.65, 2.05, 12, 0.7, subtitle, 19, "52627A")
         for i, bullet in enumerate(bullets):
