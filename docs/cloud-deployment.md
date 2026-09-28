@@ -19,7 +19,7 @@ Compute, disk and public IPv4 were estimated at roughly US$65-80/month if contin
 
 ## Operate through SSH
 
-The owner's laptop stores the private SSH key, pinned host key and connection details under ignored `runtime/cloud/`. Keep a separate secure backup of the private key and production `.env`. The production encryption key is needed to decrypt stored evidence and backups. Do not publish these files.
+The owner's laptop stores the private SSH key, pinned host key and connection details under ignored `runtime/cloud/`. The local development environment is the root `.env`; the private deployment copy is `runtime/cloud/release/.env`, and the live server reads `/opt/prooflane/.env`. Editing a laptop copy does not automatically update the VM. Keep a separate secure backup of the private key and production `.env`. The production encryption key is needed to decrypt stored evidence and backups. Do not publish these files.
 
 On the VM:
 
@@ -56,3 +56,7 @@ Deletion protection is enabled, and the disk is retained if the VM is deliberate
 The connected Vercel release passed real browser sign-in, secure/HTTP-only session cookies, configuration upload, durable audit execution, 3D rendering, PDF export, CSRF rejection, workspace navigation and a mobile overflow check, with no page errors. Public API readiness returned 200, unauthenticated identity returned 401, and metrics/admin routes returned 404. Public login throttling returned 429 with a Retry-After header after the configured burst. API and identity responses through Vercel were uncached.
 
 The configured Vertex AI Express model completed a synthetic tool-call check from the VM. An encrypted application backup containing two records and two artifacts was restored into a separate Compose project in 14.58 seconds; metadata and evidence hashes matched. This measures a small application restore on the same VM, not recovery from a lost VM or a service-level objective. An encrypted copy was also retained on the owner's laptop.
+
+The initial full-disk snapshot `prooflane-pilot-20260928` reached READY. The owner's already verified Google identity was provisioned with its existing provider association and explicit workspace roles. Hosted Google sign-in was then completed in the real browser to the workspace overview. New users still require explicit workspace approval.
+
+Google and GitHub both completed real hosted sign-in to the owner workspace. Provider secrets are stored only in private environment files. For this split deployment, `APP_ORIGIN` and `FRONTEND_ORIGIN` are `https://prooflane-five.vercel.app`, while `PUBLIC_DOMAIN` is `proof-lane.akshitjain.space`. Caddy redirects non-API/non-identity paths to the frontend, preserving the path and query. Leave `FRONTEND_ORIGIN` empty when Caddy serves the frontend itself.

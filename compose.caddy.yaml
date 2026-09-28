@@ -1,5 +1,6 @@
 # Explicit opt-in: docker compose -f compose.yaml -f compose.caddy.yaml up -d
-# Requires PUBLIC_DOMAIN, ACME_EMAIL and matching HTTPS APP_ORIGIN in .env.
+# Requires PUBLIC_DOMAIN, ACME_EMAIL and the HTTPS browser APP_ORIGIN in .env.
+# Set FRONTEND_ORIGIN only when the frontend is hosted on a different origin.
 services:
   caddy:
     image: caddy:2.11.2-alpine@sha256:834468128c7696cec0ceea6172f7d692daf645ae51983ca76e39da54a97c570d
@@ -7,6 +8,7 @@ services:
     environment:
       PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Set PUBLIC_DOMAIN to your DNS hostname}
       ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL for certificate notices}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-}
     ports:
       - "80:80"
       - "443:443"

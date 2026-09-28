@@ -1,6 +1,6 @@
 # Implementation status
 
-Revision 2 was approved on 28 September 2026. The local application is implemented and its qualification results are recorded. No cloud deployment is involved. Vertex AI Express uses the user-selected `gemini-3.8-flash`; credentials remain in ignored `.env`.
+Revision 2 was approved on 28 September 2026. The local application is implemented and its qualification results are recorded. A connected cloud pilot is now available; see [cloud operations](docs/cloud-deployment.md) for deployment qualification and limits. Vertex AI Express uses the user-selected `gemini-3.8-flash`; credentials remain in ignored `.env`.
 
 ## Delivered workflows
 

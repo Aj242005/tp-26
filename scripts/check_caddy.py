@@ -1,4 +1,5 @@
 """Check the real Caddy routing on loopback, without public ACME issuance."""
+import argparse
 import subprocess
 import time
 from pathlib import Path
@@ -7,7 +8,7 @@ import httpx
 from dotenv import dotenv_values
 
 
-def main():
+def main(frontend_origin=""):
     root = Path(__file__).resolve().parents[1]
     cfg = dotenv_values(root / ".env")
     project = cfg.get("COMPOSE_PROJECT_NAME", "prooflane")
@@ -17,6 +18,7 @@ def main():
     subprocess.run(["docker", "run", "-d", "--name", name, "--network", project + "_application",
                     "--network", project + "_edge", "-p", "127.0.0.1:8186:8080",
                     "-e", "PUBLIC_DOMAIN=http://localhost:8080", "-e", "ACME_EMAIL=operator@example.com",
+                    "-e", "FRONTEND_ORIGIN=" + frontend_origin,
                     "--mount", f"type=bind,source={root / 'Caddyfile'},target=/etc/caddy/Caddyfile,readonly",
                     image], capture_output=True, check=True)
     try:
@@ -28,18 +30,24 @@ def main():
                 except httpx.TransportError:
                     pass
                 time.sleep(1)
-            checks = {"/": 200, "/api/health/live": 200, "/api/me": 401, "/api/auth/providers": 200,
+            checks = {"/": 302 if frontend_origin else 200, "/api": 404,
+                      "/api/health/live": 200, "/api/me": 401, "/api/auth/providers": 200,
                       f"/auth/realms/{realm}/.well-known/openid-configuration": 200,
                       "/api/metrics": 404, "/api/metrics/": 404, "/auth/admin/": 404,
                       "/auth/admin/realms": 404}
             for path, expected in checks.items():
                 response = client.get(path)
                 assert response.status_code == expected, (path, response.status_code)
-            assert "Prooflane" in client.get("/").text
-            print("Caddy: nine real upstream/status checks passed; branding and private endpoint blocks verified.")
+            if frontend_origin:
+                assert client.get("/devices?view=all").headers["location"] == frontend_origin + "/devices?view=all"
+            else:
+                assert "Prooflane" in client.get("/").text
+            print("Caddy: real upstream/status checks passed; frontend routing and private endpoint blocks verified.")
     finally:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=True)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--frontend-origin", default="")
+    main(parser.parse_args().frontend_origin)

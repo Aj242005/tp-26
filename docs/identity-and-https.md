@@ -85,7 +85,7 @@ The Caddyfile explicitly selects Let's Encrypt. For repeated public issuance exp
 
 Local checks cover provider gating, PKCE/browser binding, UI states, existing identity/audit workflows, Caddy syntax and local reverse-proxy routing. Google registration has been completed in the owner's account, its credentials are in the ignored `.env`, and the owner's account is in the testing audience. The real Google callback was verified, including denial of workspace access before an explicit owner role assignment. New users still require approval.
 
-After the explicit owner assignment, Google sign-in was completed through to the existing **Workspace overview**, displaying the owner's name and real stored assessments. The GitHub OAuth app has been registered, but generating its secret is waiting for GitHub's account verification. Public Let's Encrypt issuance requires your real domain and reachable ports. Provider setup is separate from backend deployment; see the cloud operations document for the deployed topology and limitations.
+After the explicit owner assignment, Google sign-in was completed through to the existing **Workspace overview**, displaying the owner's name and real stored assessments. The GitHub OAuth app and credentials are configured, with local and hosted callback URLs registered. Public Let's Encrypt issuance requires your real domain and reachable ports. Provider setup is separate from backend deployment; see the cloud operations document for the deployed topology and limitations.
 
 ## Primary documentation consulted
 
@@ -97,3 +97,7 @@ Fetched with `webcmd web fetch --url <URL>` for both pages. No browser fallback 
 ## Connected cloud callback
 
 For the current Vercel frontend and default cloud realm, Google must allow `https://prooflane-five.vercel.app/auth/realms/prooflane/broker/google/endpoint`. The equivalent GitHub callback ends in `/broker/github/endpoint`. Keep local callbacks if the same Google client is used locally. The backend hostname is a proxy upstream, not the browser OAuth origin.
+
+Hosted Google sign-in was verified on 28 September 2026, returning the configured owner to the workspace overview. The existing local callback was retained. The OAuth application was registered with a testing audience; check the provider console before inviting additional users, and separately approve their workspace access. The public identity administrator console is blocked; administer the cloud realm through SSH and the internal identity API.
+
+GitHub sign-in was also verified through its real consent page and callback to the hosted workspace. It requests read-only profile and email access. The owner's authenticated GitHub account is explicitly connected to the same workspace identity as Google; this does not enable automatic email-based account linking for other users.

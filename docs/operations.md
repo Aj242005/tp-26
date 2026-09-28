@@ -77,6 +77,6 @@ Optional OTLP spans are written to rotating collector files under ignored runtim
 
 Qualification scripts use synthetic sessions created by an operator-only local CLI, never a public authentication bypass. Revoke them afterwards with `docker compose exec -T api python -m service.qualification cleanup-sessions`. Real OIDC and roles are verified separately with Playwright. Load, benchmark and resilience scripts record their measured results under runtime; run failure injection only on this local test workspace.
 
-Before future external hosting: replace local accounts/tenant provisioning, use trusted TLS and prompt revocation, independent backups and host redundancy, set provider data-handling/spend policies, qualify real vendor evidence, and rerun security/recovery/load checks on the intended topology. No cloud resources or Kubernetes manifests are created here.
+For the hosted pilot, see [cloud operations](cloud-deployment.md). Trusted TLS, explicit owner provisioning, restricted ingress and backups are configured. Host redundancy, independent uptime alerts, provider data-handling/spend policies, real-vendor qualification and topology-specific load qualification remain operational requirements before relying on it for unattended production use. Kubernetes is not used.
 
 The current upstream image findings, including optional Grafana dependencies, are listed in the [dependency review](dependency-review.md). The observability profile was verified locally and then stopped. Do not expose it externally based on that functional check alone.
