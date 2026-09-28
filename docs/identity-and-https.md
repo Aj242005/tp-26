@@ -96,7 +96,7 @@ Fetched with `webcmd web fetch --url <URL>` for both pages. No browser fallback 
 
 ## Connected cloud callback
 
-For the current Vercel frontend and default cloud realm, Google must allow `https://prooflane-five.vercel.app/auth/realms/prooflane/broker/google/endpoint`. The equivalent GitHub callback ends in `/broker/github/endpoint`. Keep local callbacks if the same Google client is used locally. The backend hostname is a proxy upstream, not the browser OAuth origin.
+For the current Vercel frontend and default cloud realm, Google must allow `https://prooflane.akshitjain.space/auth/realms/prooflane/broker/google/endpoint`. The equivalent GitHub callback ends in `/broker/github/endpoint`. Keep local callbacks if the same Google client is used locally. The backend hostname is a proxy upstream, not the browser OAuth origin.
 
 Hosted Google sign-in was verified on 28 September 2026, returning the configured owner to the workspace overview. The existing local callback was retained. The OAuth application was registered with a testing audience; check the provider console before inviting additional users, and separately approve their workspace access. The public identity administrator console is blocked; administer the cloud realm through SSH and the internal identity API.
 

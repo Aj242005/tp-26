@@ -6,7 +6,7 @@ This is a single-VM pilot with restart policies, durable jobs and persistent sto
 
 | Component | Location |
 | --- | --- |
-| Frontend | https://prooflane-five.vercel.app |
+| Frontend | https://prooflane.akshitjain.space |
 | HTTPS API and identity gateway | https://proof-lane.akshitjain.space |
 | VM | `prooflane-pilot`, Google Cloud `asia-south2-b` |
 | Size | `e2-standard-2`: 2 vCPU, 8 GB RAM |
@@ -59,4 +59,4 @@ The configured Vertex AI Express model completed a synthetic tool-call check fro
 
 The initial full-disk snapshot `prooflane-pilot-20260928` reached READY. The owner's already verified Google identity was provisioned with its existing provider association and explicit workspace roles. Hosted Google sign-in was then completed in the real browser to the workspace overview. New users still require explicit workspace approval.
 
-Google and GitHub both completed real hosted sign-in to the owner workspace. Provider secrets are stored only in private environment files. For this split deployment, `APP_ORIGIN` and `FRONTEND_ORIGIN` are `https://prooflane-five.vercel.app`, while `PUBLIC_DOMAIN` is `proof-lane.akshitjain.space`. Caddy redirects non-API/non-identity paths to the frontend, preserving the path and query. Leave `FRONTEND_ORIGIN` empty when Caddy serves the frontend itself.
+Google and GitHub both completed real hosted sign-in to the owner workspace. Provider secrets are stored only in private environment files. For this split deployment, `APP_ORIGIN` and `FRONTEND_ORIGIN` are `https://prooflane.akshitjain.space`, while `PUBLIC_DOMAIN` is `proof-lane.akshitjain.space`. Caddy redirects non-API/non-identity paths to the frontend, preserving the path and query. Leave `FRONTEND_ORIGIN` empty when Caddy serves the frontend itself.

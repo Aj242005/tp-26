@@ -87,4 +87,4 @@ pnpm --dir web test:e2e
 
 Browser workflow tests use local Keycloak and generated credentials. Live agent tests require an enabled provider and use synthetic material. Credentials, uploads, private research, backups and runtime test output are excluded from Git.
 
-Hosted pilot: [open Prooflane](https://prooflane-five.vercel.app). See [cloud operations](docs/cloud-deployment.md) for topology, backups and deployment limits.
+Hosted pilot: [open Prooflane](https://prooflane.akshitjain.space). See [cloud operations](docs/cloud-deployment.md) for topology, backups and deployment limits.
