@@ -51,6 +51,15 @@ The organizer supplied a reference list, **not a dataset**. Included examples ar
 
 Read [coverage and evidence](docs/coverage.md), [operations](docs/operations.md), [security boundaries](docs/security.md), and [verification results](docs/verification.md). The approved [implementation plan](IMPLEMENTATION_PLAN.md) is retained with an implementation reconciliation in [status](IMPLEMENTATION_STATUS.md).
 
+The local release retains upstream image findings documented in the [dependency review](docs/dependency-review.md), including an unresolved Keycloak template-library issue. Keep the gateway bound to loopback; this release has not been qualified for external hosting.
+
+## Handover
+
+- [Architecture document](docs/deliverables/architecture.pdf): two pages.
+- [Technical presentation](docs/deliverables/technical-presentation.pptx): five slides.
+- [Recorded application walkthrough](docs/deliverables/demo.webm): 114 seconds, using synthetic configurations and persisted results.
+- [Example device report](docs/deliverables/example-device-report.pdf): generated from the synthetic IOS fixture.
+
 ## Development checks
 
 ```powershell

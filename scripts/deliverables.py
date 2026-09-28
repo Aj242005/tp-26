@@ -1,6 +1,7 @@
 """Generate the two-page architecture PDF and five-slide technical presentation."""
 
 import json
+import math
 from pathlib import Path
 
 from pptx import Presentation
@@ -94,6 +95,32 @@ def architecture():
             "Framework selections are candidate crosswalks, not full certified CIS/NIST/STIG/ISO packs.",
         ],
     )
+    pdf.setFillColor(HexColor("#17253d"))
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(40, 191, "Local service connections")
+
+    def box(x, y, w, label):
+        pdf.setStrokeColor(HexColor("#c5d1e2"))
+        pdf.setFillColor(HexColor("#f4f7fc"))
+        pdf.roundRect(x, y, w, 34, 5, fill=1, stroke=1)
+        pdf.setFillColor(HexColor("#17253d"))
+        pdf.setFont("Helvetica", 9)
+        pdf.drawCentredString(x + w / 2, y + 13, label)
+
+    def arrow(x1, y1, x2, y2):
+        pdf.setStrokeColor(HexColor("#647897"))
+        pdf.line(x1, y1, x2, y2)
+        angle = math.atan2(y2 - y1, x2 - x1)
+        for delta in (-0.5, 0.5):
+            pdf.line(x2, y2, x2 - 6 * math.cos(angle + delta), y2 - 6 * math.sin(angle + delta))
+
+    for args in [(40, 135, 70, "Browser"), (135, 135, 70, "NGINX"), (230, 135, 80, "API replicas"),
+                 (430, 135, 125, "Postgres / Valkey / S3"), (135, 65, 70, "Keycloak"),
+                 (320, 65, 90, "Worker replicas"), (450, 65, 105, "Google egress")]:
+        box(*args)
+    for args in [(110, 152, 135, 152), (205, 152, 230, 152), (310, 152, 430, 152),
+                 (170, 135, 170, 99), (365, 99, 453, 135), (410, 82, 450, 82)]:
+        arrow(*args)
     pdf.showPage()
     title(2, "Security, recovery and qualification")
     block(
@@ -111,7 +138,7 @@ def architecture():
         569,
         "Fault tolerance and recovery",
         [
-            "75-second job lease, 15-second heartbeat, fencing and bounded retries; at-least-once effects.",
+            "60-second configured job lease, 15-second heartbeat, fencing and bounded retries; at-least-once effects.",
             "Valkey outage refuses expensive work while allowing tightly limited evidence browsing.",
             "Consistent encrypted backup includes application/identity databases and encrypted objects.",
             "Restore into fresh volumes verifies record counts and every referenced artifact hash.",
@@ -123,7 +150,7 @@ def architecture():
         "Recorded qualification",
         [
             "Real browser tests cover OIDC, cross-tenant access, roles, mapping activation/rollback and PDFs.",
-            f"Worker recovery: {measured('resilience-result.json', 'worker_recovery.seconds')} seconds; accepted work completed.",
+            f"Worker recovery: {measured('worker-recovery-result.json', 'recovery_seconds')} seconds; accepted work completed.",
             f"Restore rehearsal: {measured('restore-result.json', 'seconds')} seconds; plaintext artifact integrity checked.",
             f"Deterministic throughput: {measured('benchmark-result.json', 'configs_per_minute')} configurations/minute.",
             f"Metadata p95: {measured('load-result.json', 'p95_ms')} ms. Full conditions and caveats: docs/verification.md.",
@@ -182,7 +209,7 @@ def presentation():
             [
                 "Two-replica rate limit: 30 accepted / 25 rejected in the bounded burst test.",
                 "Valkey outage: reads available, writes refused. API replica-loss reads succeeded.",
-                f"Worker recovery: {measured('resilience-result.json', 'worker_recovery.seconds')} seconds; accepted work completed.",
+                f"Worker recovery: {measured('worker-recovery-result.json', 'recovery_seconds')} seconds; accepted work completed.",
                 f"Fresh-volume restore: {measured('restore-result.json', 'seconds')} seconds; hashes verified.",
                 f"Throughput: {measured('benchmark-result.json', 'configs_per_minute')} configs/min; metadata p95: {measured('load-result.json', 'p95_ms')} ms.",
             ],

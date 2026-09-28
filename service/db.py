@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from functools import lru_cache
 
-from sqlalchemy import JSON, DateTime, Index, Integer, String, create_engine, text
+from sqlalchemy import JSON, DateTime, Index, Integer, String, create_engine, text, event as sa_event
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from service.config import settings
@@ -33,9 +33,21 @@ class Entity(Base):
     tenant_id: Mapped[str] = mapped_column(String(36), index=True)
     kind: Mapped[str] = mapped_column(String(32))
     data: Mapped[dict] = mapped_column(JSON)
+    list_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now, onupdate=now)
     __table_args__ = (Index("ix_entity_tenant_kind_created", "tenant_id", "kind", "created_at"),)
+
+
+@sa_event.listens_for(Entity, "before_insert")
+@sa_event.listens_for(Entity, "before_update")
+def update_list_data(mapper, connection, row):
+    # Persist lightweight audit metadata in the same write as the immutable evidence snapshot.
+    if row.kind == "audit":
+        hidden = {"findings", "normalization", "mapping_snapshot", "agent_checkpoint", "investigation", "clarification_answers"}
+        row.list_data = {key: value for key, value in row.data.items() if key not in hidden}
+        if row.list_data.get("policy"):
+            row.list_data["policy"] = {key: value for key, value in row.list_data["policy"].items() if key != "rules"}
 
 
 class LoginState(Base):

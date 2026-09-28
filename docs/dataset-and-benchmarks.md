@@ -1,5 +1,7 @@
 # SIH26155 data, benchmark and evaluation plan
 
+Implementation note (28 September 2026): the sections below preserve the approved corpus plan. The delivered corpus is five team-authored synthetic fixtures plus labelled test mutations; see [actual coverage](coverage.md) and [verification](verification.md). No official dataset or licensed benchmark archive was obtained. The implemented importers accept explicit authorized reference text and reviewed policy JSON; ZIP/PDF/SCAP package import is not implemented. Bounded lexical passage search supports the agent. Exact-model live Vertex AI Express calls have now passed. Independent vendor labels and fair comparative evaluations remain external evidence work.
+
 Prepared: 28 September 2026. Status: implementation design, pending approval with the main plan.
 
 ## 1. What the organizer supplied

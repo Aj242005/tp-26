@@ -63,7 +63,7 @@ services:
     networks: [data]
     mem_limit: 768m
   identity:
-    image: quay.io/keycloak/keycloak:26.6@sha256:0aae0de7fca85525f727d3354df17896092de8bb26ae4c12d89c77e5df8cbce4
+    image: quay.io/keycloak/keycloak:26.7.4@sha256:82a77884f3af238beab1e7afd63b5f530e1b5c0590bd7aa60b40a40463e29b2c
     command: [start, --import-realm, --http-enabled=true, --http-relative-path=/auth]
     restart: unless-stopped
     environment:
@@ -77,6 +77,8 @@ services:
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_PROXY_HEADERS: xforwarded
       KC_HEALTH_ENABLED: "true"
+      # One local identity replica; avoid stale cluster discovery on local restarts.
+      KC_CACHE: local
       JAVA_OPTS_KC_HEAP: -Xms128m -Xmx512m
     volumes: [./runtime/realm.json:/opt/keycloak/data/import/realm.json:ro, ./ops/identity-health.sh:/opt/keycloak/health.sh:ro]
     depends_on: {database: {condition: service_healthy}}
@@ -145,7 +147,7 @@ services:
       timeout: 5s
       retries: 3
   gemini-egress:
-    image: nginxinc/nginx-unprivileged:1.28-alpine@sha256:7377697a821c131a924a7105fafbe7414db4e9fcc77a6f08f776f33f141ec3f8
+    image: nginxinc/nginx-unprivileged:stable-alpine@sha256:ed04ec1ff34502c339ee5c3ae3f855442398edc1d05591e2b98981dcbbd20b1e
     volumes: [./ops/gemini-egress.conf:/etc/nginx/nginx.conf:ro]
     read_only: true
     tmpfs: ["/tmp:size=32m,mode=1777"]

@@ -25,4 +25,4 @@ Two local organizations and bootstrap accounts are configured explicitly. Role/m
 
 Redaction recognizes common credential forms; no generic redactor can guarantee discovery of every proprietary secret syntax. Review unfamiliar sensitive input before using hosted inference. Provider retention/account settings are separate from local storage and must be configured for the intended data.
 
-Dependency and image scans are point-in-time evidence, not a guarantee of absence of vulnerabilities. See actual results and any dispositions in [verification](verification.md).
+Dependency and image scans are point-in-time evidence, not a guarantee of absence of vulnerabilities. See actual results in [verification](verification.md) and unresolved upstream findings in the [dependency review](dependency-review.md). This local release is not qualified for external hosting while those findings remain open.

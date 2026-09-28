@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import logging
+import socket
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -15,8 +16,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 from pydantic import BaseModel, Field
-from sqlalchemy import cast, func, select, text
-from sqlalchemy.dialects.postgresql import JSONB, array
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -57,7 +57,8 @@ async def lifespan(app):
 
 app = FastAPI(title="SIH26155 Evidence Auditor", version="0.1.0", lifespan=lifespan,
               docs_url=None, redoc_url=None, openapi_url=None)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "api", urlsplit(settings().app_origin).hostname])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "api",
+    urlsplit(settings().app_origin).hostname, *socket.gethostbyname_ex(socket.gethostname())[2]])
 configure("api", app)
 
 
@@ -119,13 +120,7 @@ def summary(row):
 
 
 def record_query(kind):
-    data = Entity.data
-    if kind == "audit":
-        # Project list metadata in PostgreSQL; do not deserialize full configurations per row.
-        data = cast(data, JSONB).op("-")(array([
-            "findings", "normalization", "mapping_snapshot", "agent_checkpoint",
-            "investigation", "clarification_answers",
-        ])).op("#-")(array(["policy", "rules"]))
+    data = Entity.list_data if kind == "audit" else Entity.data
     return select(Entity.id, Entity.kind, Entity.created_at, Entity.updated_at, data.label("data"))
 
 

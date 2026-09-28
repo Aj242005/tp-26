@@ -3,7 +3,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_LINK_MODE=copy PYTHONPATH=/a
 WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:0.11.1@sha256:fc93e9ecd7218e9ec8fba117af89348eef8fd2463c50c13347478769aaedd0ce /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --compile-bytecode && uv cache clean && rm /usr/local/bin/uv && useradd --uid 10001 --create-home app
+RUN uv sync --frozen --no-dev --compile-bytecode && uv cache clean && rm /usr/local/bin/uv \
+    && python -m pip uninstall --yes pip && useradd --uid 10001 --create-home app
 COPY service ./service
 COPY migrations ./migrations
 COPY alembic.ini ./

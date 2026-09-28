@@ -2,7 +2,7 @@
 
 ## Runtime
 
-NGINX serves the frontend and distributes API requests. API and workers scale independently. PostgreSQL owns accepted jobs, sessions, policy versions and metadata. Valkey owns shared limits/provider permits; AOF preserves counters across ordinary restarts. SeaweedFS stores application-encrypted artifacts. Keycloak runs in production server mode behind the gateway. A dedicated NGINX egress service forwards only to the Google inference hosts; API/worker networks have no general outbound route.
+NGINX serves the frontend and distributes API requests. API and workers scale independently. PostgreSQL owns accepted jobs, sessions, policy versions and metadata. Valkey owns shared limits/provider permits; AOF preserves counters across ordinary restarts. SeaweedFS stores application-encrypted artifacts. Keycloak runs in production server mode behind the gateway with a local cache for the single identity replica. A dedicated NGINX egress service forwards only to the Google inference hosts; API/worker networks have no general outbound route.
 
 Default address: http://localhost:8185. Port 8080 was occupied on the development workstation. Change APP_PORT and APP_ORIGIN together; regenerate bootstrap files and synchronize an existing identity client's redirects with `docker compose exec -T api python scripts/sync_identity.py`. NGINX forwarded-port settings must also match. Realm imports preserve existing users.
 
@@ -14,7 +14,7 @@ docker compose -f compose.yaml -f compose.scale.yaml up -d
 
 Liveness checks the process. `/api/health/ready` checks PostgreSQL, Valkey and S3. Compose does not automatically restart an unhealthy process; restart policies cover exited containers. Identity readiness blocks initial gateway startup.
 
-Accepted work is durable before the response. Claims use SKIP LOCKED, a 75-second lease, 15-second heartbeat and fencing. Tenant concurrency is two jobs, with separate Gemini permits. New-audit queue admission is capped at 200 per tenant. Evaluation commits before its PDF stage, so PDF failures can be retried independently. Processing is at least once; stale workers cannot publish newer results. Unreferenced artifacts are removed after a 24-hour grace period.
+Accepted work is durable before the response. Claims use SKIP LOCKED, a 60-second configured lease, 15-second heartbeat and fencing. Tenant concurrency is two jobs, with separate Gemini permits. New-audit queue admission is capped at 200 per tenant. Evaluation commits before its PDF stage, so PDF failures can be retried independently. Processing is at least once; stale workers cannot publish newer results. Unreferenced artifacts are removed after a 24-hour grace period.
 
 ## Failure runbooks
 
@@ -71,10 +71,12 @@ docker compose -f compose.yaml -f compose.scale.yaml -f compose.observability.ya
 
 Prometheus: http://localhost:9095. Grafana: http://localhost:3005, admin with LOCAL_ADMIN_PASSWORD. The provisioned dashboard shows rate, p95 latency, queue size/age, server errors and memory. Alerts cover API loss, stale queues and error ratios. No external notification receiver is configured. Public application routing denies metrics.
 
-Optional OTLP spans are written to rotating collector files. Authentication paths, bodies and headers are excluded. Job/request identifiers support correlation; keys and configuration contents do not belong in logs. Backup freshness is recorded in runtime/latest-backup.json and must be checked operationally.
+Optional OTLP spans are written to rotating collector files under ignored runtime/traces (10 MiB per file, two backups). Authentication paths, bodies and headers are excluded. Job/request identifiers support correlation; keys and configuration contents do not belong in logs. Backup freshness is recorded in runtime/latest-backup.json and must be checked operationally.
 
 ## Qualification and future hosting
 
 Qualification scripts use synthetic sessions created by an operator-only local CLI, never a public authentication bypass. Revoke them afterwards with `docker compose exec -T api python -m service.qualification cleanup-sessions`. Real OIDC and roles are verified separately with Playwright. Load, benchmark and resilience scripts record their measured results under runtime; run failure injection only on this local test workspace.
 
 Before future external hosting: replace local accounts/tenant provisioning, use trusted TLS and prompt revocation, independent backups and host redundancy, set provider data-handling/spend policies, qualify real vendor evidence, and rerun security/recovery/load checks on the intended topology. No cloud resources or Kubernetes manifests are created here.
+
+The current upstream image findings, including optional Grafana dependencies, are listed in the [dependency review](dependency-review.md). The observability profile was verified locally and then stopped. Do not expose it externally based on that functional check alone.

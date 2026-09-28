@@ -14,7 +14,7 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 
 
-async def main(seconds, rps, output, audits=False):
+async def main(seconds, rps, output, audits=False, resources_enabled=False):
     if not (1 <= seconds <= 7200 and 1 <= rps <= 100):
         raise ValueError("Use 1–7200 seconds and 1–100 requests/second for the local test")
     sessions = json.loads((ROOT / "runtime" / "qualification-sessions.json").read_text())
@@ -29,13 +29,18 @@ async def main(seconds, rps, output, audits=False):
                                    capture_output=True, text=True, check=True).stdout.split()
     async def sample_resources():
         while True:
-            sample = await asyncio.to_thread(subprocess.run,
-                ["docker", "stats", "--no-stream", "--format", "{{json .}}", *container_ids], capture_output=True, text=True)
-            resources.append({"second": round(time.monotonic() - started),
-                              "containers": [json.loads(line) for line in sample.stdout.splitlines() if line.startswith("{")]})
-            await asyncio.sleep(60)
-    sampler = asyncio.create_task(sample_resources())
-    async with httpx.AsyncClient(base_url="http://localhost:8185", timeout=10, limits=httpx.Limits(max_connections=100)) as client:
+            try:
+                sample = await asyncio.to_thread(subprocess.run,
+                    ["docker", "stats", "--no-stream", "--format", "{{json .}}", *container_ids], capture_output=True, text=True, timeout=15)
+                resources.append({"second": round(time.monotonic() - started),
+                                  "containers": [json.loads(line) for line in sample.stdout.splitlines() if line.startswith("{")]})
+            except subprocess.TimeoutExpired:
+                resources.append({"second": round(time.monotonic() - started), "error": "Docker resource sampling timed out"})
+            await asyncio.sleep(300)
+    async with httpx.AsyncClient(base_url="http://127.0.0.1:8185", timeout=10, limits=httpx.Limits(max_connections=100)) as client:
+        # Start the arrival clock only after hardware/Docker discovery and client initialization.
+        started = time.monotonic()
+        sampler = asyncio.create_task(sample_resources()) if resources_enabled else None
         async def submit_audits():
             for index in range((seconds + 59) // 60):
                 await asyncio.sleep(max(0, started + index * 60 - time.monotonic()))
@@ -89,14 +94,17 @@ async def main(seconds, rps, output, audits=False):
             await asyncio.gather(*pending)
         if audit_task:
             await audit_task
-    sampler.cancel()
-    await asyncio.gather(sampler, return_exceptions=True)
+    if sampler:
+        sampler.cancel()
+        await asyncio.gather(sampler, return_exceptions=True)
     latencies.sort()
     result = {"duration_seconds": round(time.monotonic() - started, 2), "scheduled_rps": rps, "requests": len(latencies),
               "statuses": dict(statuses), "p50_ms": round(statistics.median(latencies), 2),
               "p95_ms": round(latencies[int((len(latencies) - 1) * .95)], 2),
               "p99_ms": round(latencies[int((len(latencies) - 1) * .99)], 2), "host": platform.platform(),
               "docker": hardware, "identity": "100 synthetic authenticated sessions, two tenants; OIDC login tested separately",
+              "transport": "IPv4 loopback through the same NGINX gateway; avoids Windows localhost IPv6 fallback",
+              "resource_sampling": resources_enabled,
               "snapshots": snapshots, "resources": resources, "audits": audit_results}
     (ROOT / "runtime" / (output + ".json")).write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps({key: value for key, value in result.items() if key not in ("snapshots", "resources", "audits")}))
@@ -111,5 +119,6 @@ if __name__ == "__main__":
     parser.add_argument("--rps", type=int, default=50)
     parser.add_argument("--output", default="load-result")
     parser.add_argument("--audits", action="store_true", help="Submit one real synthetic audit per minute and verify its PDF stage")
+    parser.add_argument("--resources", action="store_true", help="Sample only this project's containers every five minutes")
     args = parser.parse_args()
-    asyncio.run(main(args.seconds, args.rps, args.output, args.audits))
+    asyncio.run(main(args.seconds, args.rps, args.output, args.audits, args.resources))

@@ -18,7 +18,7 @@ function useRecords(kind: string) {
   const [offset, setOffset] = useState(0);
   const query = useQuery({ queryKey: [kind, offset], queryFn: () => api<{ items: RecordItem[]; total: number }>(`/records?kind=${kind}&offset=${offset}&page_size=30`) });
   const total = query.data?.total ?? 0;
-  return { ...query, pager: <div className="pagination"><span>{total ? offset + 1 : 0}?{Math.min(offset + 30, total)} of {total}</span><div><button className="button text" disabled={!offset || query.isFetching} onClick={() => setOffset(offset - 30)}>Previous</button><button className="button text" disabled={offset + 30 >= total || query.isFetching} onClick={() => setOffset(offset + 30)}>Next</button></div></div> };
+  return { ...query, pager: <div className="pagination"><span>{total ? offset + 1 : 0} - {Math.min(offset + 30, total)} of {total}</span><div><button className="button text" disabled={!offset || query.isFetching} onClick={() => setOffset(offset - 30)}>Previous</button><button className="button text" disabled={offset + 30 >= total || query.isFetching} onClick={() => setOffset(offset + 30)}>Next</button></div></div> };
 }
 
 export function Training(ctx: Context) {

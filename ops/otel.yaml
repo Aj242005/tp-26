@@ -8,7 +8,7 @@ processors:
   batch: {}
 exporters:
   file:
-    path: /tmp/traces.json
+    path: /var/lib/otel/traces.json
     rotation: {max_megabytes: 10, max_backups: 2}
 service:
   pipelines:
