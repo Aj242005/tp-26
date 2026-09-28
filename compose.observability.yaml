@@ -1,0 +1,33 @@
+services:
+  api:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel:4318
+  worker:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel:4318
+  prometheus:
+    image: prom/prometheus@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e
+    command: [--config.file=/etc/prometheus/prometheus.yml, --storage.tsdb.retention.time=7d]
+    volumes: [./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro, ./ops/alerts.yml:/etc/prometheus/alerts.yml:ro, metrics:/prometheus]
+    networks: [application, edge]
+    ports: ["127.0.0.1:9095:9090"]
+    mem_limit: 256m
+  grafana:
+    image: grafana/grafana@sha256:ac461fb352abc50da10a51c7d02462e9c05488f11f53f14b3ad79a8145f638a0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes: [./ops/grafana:/etc/grafana/provisioning:ro, dashboards:/var/lib/grafana]
+    networks: [application, edge]
+    ports: ["127.0.0.1:3005:3000"]
+    mem_limit: 256m
+  otel:
+    image: otel/opentelemetry-collector-contrib@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1
+    command: [--config=/etc/otelcol/config.yaml]
+    volumes: [./ops/otel.yaml:/etc/otelcol/config.yaml:ro]
+    networks: [application]
+    mem_limit: 256m
+volumes:
+  metrics:
+  dashboards:

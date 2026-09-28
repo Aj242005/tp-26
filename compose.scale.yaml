@@ -1,0 +1,5 @@
+services:
+  api:
+    deploy: {replicas: 2}
+  worker:
+    deploy: {replicas: 2}

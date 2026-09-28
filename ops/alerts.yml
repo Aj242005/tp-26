@@ -1,0 +1,18 @@
+groups:
+  - name: auditor
+    rules:
+      - alert: AuditorUnavailable
+        expr: up{job="auditor"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: API replica is unavailable}
+      - alert: AuditQueueStalled
+        expr: max(sih_queue_oldest_seconds) > 180
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: Oldest queued work exceeds three minutes}
+      - alert: AuditorServerErrors
+        expr: sum(rate(sih_requests_total{status=~"5.."}[5m])) / clamp_min(sum(rate(sih_requests_total[5m])), 0.01) > 0.01
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: Server error ratio exceeds one percent}

@@ -1,0 +1,172 @@
+name: sih26155
+x-service: &service
+  image: sih26155-app:local
+  build: .
+  env_file: .env
+  restart: unless-stopped
+  read_only: true
+  tmpfs: ["/tmp:size=128m,mode=1777"]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  networks: [application, data]
+  environment: &environment
+    APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8185}
+    LLM_ENABLED: ${LLM_ENABLED:-false}
+    GEMINI_EGRESS_GATEWAY: http://gemini-egress
+    DATABASE_URL: postgresql+psycopg://sih_app:${APP_DB_PASSWORD}@database:5432/sih26155
+    WORKER_DATABASE_URL: postgresql+psycopg://sih_worker:${WORKER_DB_PASSWORD}@database:5432/sih26155
+    REDIS_URL: redis://:${REDIS_PASSWORD}@cache:6379/0
+    S3_ENDPOINT: http://object-store:9000
+    OIDC_INTERNAL_URL: http://identity:8080/auth/realms/sih26155
+    OIDC_ISSUER_URL: ${APP_ORIGIN:-http://localhost:8185}/auth/realms/sih26155
+  depends_on:
+    migrate: {condition: service_completed_successfully}
+    cache: {condition: service_healthy}
+    object-store: {condition: service_started}
+services:
+  database:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sih26155
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      WORKER_DB_PASSWORD: ${WORKER_DB_PASSWORD}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    volumes: [postgres:/var/lib/postgresql/data, ./ops/init-db.sh:/docker-entrypoint-initdb.d/01-users.sh:ro]
+    networks: [data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d sih26155"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 768m
+  cache:
+    image: valkey/valkey:8-alpine@sha256:081c2f5cb575efc901aa80ff9cdbd1ec6a301682fd35e1ebb4b0990a4a4a8507
+    restart: unless-stopped
+    environment: {REDIS_PASSWORD: "${REDIS_PASSWORD}"}
+    command: [sh, -c, 'exec valkey-server --requirepass "$$REDIS_PASSWORD" --maxmemory 128mb --maxmemory-policy noeviction --appendonly yes --appendfsync everysec']
+    volumes: [cache:/data]
+    networks: [data]
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" valkey-cli ping | grep PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 192m
+  object-store:
+    image: chrislusf/seaweedfs@sha256:ce9e796f1fe6f06968f4c04bdaf8f678dad9c8acdfef3d244133d71bfa6bf882
+    command: server -dir=/data -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3.json -master.volumeSizeLimitMB=64
+    restart: unless-stopped
+    volumes: [objects:/data, ./runtime/s3.json:/etc/seaweedfs/s3.json:ro]
+    networks: [data]
+    mem_limit: 768m
+  identity:
+    image: quay.io/keycloak/keycloak:26.6@sha256:0aae0de7fca85525f727d3354df17896092de8bb26ae4c12d89c77e5df8cbce4
+    command: [start, --import-realm, --http-enabled=true, --http-relative-path=/auth]
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: bootstrap
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://database:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: ${APP_ORIGIN:-http://localhost:8185}/auth
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: -Xms128m -Xmx512m
+    volumes: [./runtime/realm.json:/opt/keycloak/data/import/realm.json:ro, ./ops/identity-health.sh:/opt/keycloak/health.sh:ro]
+    depends_on: {database: {condition: service_healthy}}
+    networks: [application, data]
+    mem_limit: 1024m
+    healthcheck:
+      test: [CMD, bash, /opt/keycloak/health.sh]
+      interval: 10s
+      timeout: 3s
+      retries: 18
+      start_period: 60s
+  migrate:
+    <<: *service
+    restart: "no"
+    command: [alembic, upgrade, head]
+    environment:
+      <<: *environment
+      MIGRATION_DATABASE_URL: postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@database:5432/sih26155
+    depends_on: {database: {condition: service_healthy}}
+  api:
+    <<: *service
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    mem_limit: 512m
+  worker:
+    <<: *service
+    command: [python, -m, service.worker]
+    environment:
+      <<: *environment
+      SERVICE_ROLE: worker
+    healthcheck:
+      test: [CMD, python, -c, "import os,time; assert time.time()-os.path.getmtime('/tmp/worker-heartbeat')<100"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+    mem_limit: 768m
+    stop_grace_period: 90s
+  gateway:
+    build: {context: ., dockerfile: web/Dockerfile}
+    image: sih26155-web:local
+    restart: unless-stopped
+    ports: ["127.0.0.1:${APP_PORT:-8185}:8080"]
+    depends_on: {api: {condition: service_healthy}, identity: {condition: service_healthy}}
+    networks: [application, edge]
+    read_only: true
+    tmpfs: ["/tmp:size=128m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8080/api/health/live]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  maintenance:
+    <<: *service
+    command: [python, -m, service.maintenance]
+    mem_limit: 256m
+    healthcheck:
+      test: [CMD, python, -c, "import os,time; assert time.time()-os.path.getmtime('/tmp/maintenance-heartbeat')<180"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+  gemini-egress:
+    image: nginxinc/nginx-unprivileged:1.28-alpine@sha256:7377697a821c131a924a7105fafbe7414db4e9fcc77a6f08f776f33f141ec3f8
+    volumes: [./ops/gemini-egress.conf:/etc/nginx/nginx.conf:ro]
+    read_only: true
+    tmpfs: ["/tmp:size=32m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    networks: [application, outbound]
+    mem_limit: 64m
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8081/health]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+volumes:
+  postgres:
+  objects:
+  cache:
+networks:
+  application:
+    internal: true
+  data:
+    internal: true
+  outbound:
+  edge:

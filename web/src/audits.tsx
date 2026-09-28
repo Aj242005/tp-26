@@ -1,0 +1,106 @@
+import { useRef, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, Download, FileText, Play, Plus, RefreshCw, Search, Sparkles, Upload, X } from 'lucide-react';
+import { api, date, post, type Policy, type RecordItem } from './api';
+import { AuditTable, Badge, Empty, ErrorBox, Loading, PageHead, moveTab, type Context } from './components';
+
+const active = new Set(['queued', 'running', 'retry', 'report_pending']);
+const frameworkNames = ['Baseline', 'CIS', 'NIST', 'STIG', 'ISO'];
+const showValue = (value: unknown) => value === null || value === undefined ? 'Unknown' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+
+export function Devices(ctx: Context) {
+  const client = useQueryClient();
+  const navigate = useNavigate();
+  const input = useRef<HTMLInputElement>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  async function remove(id: string) { setBusy(id); try { await api('/devices/' + id, { method: 'DELETE' }); setDeleting(null); await client.invalidateQueries({ queryKey: ['devices'] }); ctx.notify('Deletion queued, including this configuration?s audits and reports.'); } catch (error) { ctx.notify((error as Error).message, true); } finally { setBusy(''); } }
+  const [files, setFiles] = useState<File[]>([]);
+  const [complete, setComplete] = useState(false);
+  const [vendor, setVendor] = useState('');
+  const [firmware, setFirmware] = useState('');
+  const [framework, setFramework] = useState('Baseline');
+  const [busy, setBusy] = useState('');
+  const [filter, setFilter] = useState('');
+  const [offset, setOffset] = useState(0);
+  const policies = useQuery({ queryKey: ['custom-policies'], queryFn: () => api<{ items: RecordItem[] }>('/records?kind=policy&page_size=100') });
+  const query = useQuery({ queryKey: ['devices', offset], queryFn: () => api<{ items: RecordItem[]; total: number }>(`/records?kind=device&offset=${offset}`) });
+  async function submit(event: FormEvent) {
+    event.preventDefault(); setBusy('upload');
+    try {
+      const form = new FormData(); files.forEach(file => form.append('files', file));
+      form.append('complete', String(complete)); form.append('vendor', vendor); form.append('firmware', firmware);
+      const result = await api<{ items: RecordItem[] }>('/devices', { method: 'POST', body: form });
+      ctx.notify(`${result.items.length} configuration${result.items.length === 1 ? '' : 's'} preserved. Select a policy and run an audit.`);
+      setUploadOpen(false); setFiles([]); await client.invalidateQueries({ queryKey: ['devices'] });
+    } catch (error) { ctx.notify((error as Error).message, true); } finally { setBusy(''); }
+  }
+  async function run(device: RecordItem) {
+    setBusy(device.id);
+    try { const result = await post<{ id: string }>('/audits', { device_id: device.id, framework: frameworkNames.includes(framework) ? framework : 'Baseline', policy_id: frameworkNames.includes(framework) ? null : framework }, { 'Idempotency-Key': crypto.randomUUID() }); navigate('/audits/' + result.id); }
+    catch (error) { ctx.notify((error as Error).message, true); } finally { setBusy(''); }
+  }
+  const items = query.data?.items.filter(item => `${item.name} ${item.vendor} ${item.firmware}`.toLowerCase().includes(filter.toLowerCase())) ?? [];
+  return <><PageHead title="Device inventory" description="Preserved snapshots are the starting point for every assessment."><button className="button" onClick={() => setUploadOpen(!uploadOpen)} disabled={!ctx.user.roles.includes('auditor')}><Plus size={17} /> Add configurations</button></PageHead>
+    {uploadOpen && <form className="surface upload-form" onSubmit={submit}><div className="section-head"><h2>Upload configurations</h2><button type="button" className="icon-button" aria-label="Close upload form" onClick={() => setUploadOpen(false)}><X size={18} /></button></div>
+      <div className="form-body"><div className="upload-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); setFiles(Array.from(event.dataTransfer.files)); }}><Upload size={28} /><h3>{files.length ? `${files.length} file${files.length === 1 ? '' : 's'} selected` : 'Drop configuration files here'}</h3><p>UTF-8 text, CFG, CONF, JSON or XML · 10 MiB per file</p><button type="button" className="button secondary" onClick={() => input.current?.click()}>Choose files</button><input ref={input} type="file" multiple accept=".txt,.cfg,.conf,.config,.json,.xml" className="sr-only" aria-label="Configuration files" onChange={event => setFiles(Array.from(event.target.files ?? []))} />{files.length > 0 && <p className="file-list">{files.map(file => file.name).join(', ')}</p>}</div>
+      <div className="form-grid"><label>Vendor / format<select value={vendor} onChange={event => setVendor(event.target.value)}><option value="">Detect from evidence</option><option value="ios">Cisco IOS / IOS-XE</option><option value="junos">Junos set format</option><option value="fortios">FortiOS</option><option value="unknown">Unfamiliar format</option></select></label><label>Firmware version<input value={firmware} onChange={event => setFirmware(event.target.value)} placeholder="Optional; leave blank if unknown" /></label></div>
+      <label className="check-label"><input type="checkbox" checked={complete} onChange={event => setComplete(event.target.checked)} /><span>This is a complete configuration snapshot.<small>Enable only when all relevant scopes are included. Snippets do not establish device-wide settings.</small></span></label>
+      <div className="actions"><button className="button" disabled={!files.length || !!busy}>{busy === 'upload' ? 'Preserving files…' : 'Upload configurations'} <ArrowRight size={16} /></button></div></div></form>}
+    <section className="surface"><div className="toolbar"><label className="search-field"><Search size={17} /><input aria-label="Filter devices on this page" placeholder="Filter this page by device or vendor" value={filter} onChange={event => setFilter(event.target.value)} /></label><label className="inline-field">Audit policy<select value={framework} onChange={event => setFramework(event.target.value)}>{frameworkNames.map(name => <option key={name}>{name}</option>)}{policies.data?.items.map(item => <option value={item.id} key={item.id}>{item.name} / {(item.spec as Policy).version}</option>)}</select></label></div>
+      <ErrorBox error={query.error} />{query.isError ? null : query.isPending ? <Loading /> : items.length ? <div className="table-scroll" role="region" aria-label="Scrollable devices table" tabIndex={0}><table><thead><tr><th>Device</th><th>Vendor / version</th><th>Source</th><th>Added</th><th>Action</th></tr></thead><tbody>{items.map(device => <tr key={device.id}><td><strong>{device.name}</strong><small className="mono">{device.id.slice(0, 8)}</small></td><td>{device.vendor?.toUpperCase()}<small>{device.firmware ?? 'Version unknown'}</small></td><td>{device.synthetic ? <Badge value="synthetic" /> : 'User upload'}</td><td className="date-cell">{date(device.created_at)}</td><td><button className="button small secondary" disabled={device.pending_delete || !!busy || !ctx.user.roles.includes('auditor')} onClick={() => run(device)}><Play size={14} />{busy === device.id ? 'Starting…' : 'Run audit'}</button></td></tr>)}</tbody></table></div> : <Empty title={filter ? 'No matching devices on this page' : 'Your inventory is empty'}><p>Add a configuration to preserve its evidence and begin an assessment.</p></Empty>}
+      <div className="pagination"><span>{query.data?.total ?? 0} configurations</span><div><button className="button text" disabled={!offset} onClick={() => setOffset(offset - 30)}>Previous</button><button className="button text" disabled={offset + 30 >= (query.data?.total ?? 0)} onClick={() => setOffset(offset + 30)}>Next</button></div></div></section>
+  </>;
+}
+
+export function Audits() {
+  const [offset, setOffset] = useState(0);
+  const query = useQuery({ queryKey: ['audits', offset], queryFn: () => api<{ items: RecordItem[]; total: number }>(`/records?kind=audit&offset=${offset}`), refetchInterval: 6000 });
+  return <><PageHead title="Audit register" description="Versioned assessments with source evidence, declared coverage, and a reviewable history."><Link className="button" to="/devices"><Plus size={17} /> New audit</Link></PageHead><section className="surface"><div className="section-head"><h2>All assessments</h2><span className="muted">{query.data?.total ?? 0} records</span></div><ErrorBox error={query.error} />{query.isError ? null : query.isPending ? <Loading /> : <AuditTable items={query.data?.items ?? []} />}<div className="pagination"><span>Showing {offset + 1}–{Math.min(offset + 30, query.data?.total ?? 0)}</span><div><button className="button text" disabled={!offset} onClick={() => setOffset(offset - 30)}>Previous</button><button className="button text" disabled={offset + 30 >= (query.data?.total ?? 0)} onClick={() => setOffset(offset + 30)}>Next</button></div></div></section></>;
+}
+
+export function AuditDetail(ctx: Context) {
+  const { id } = useParams();
+  const client = useQueryClient();
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<string | null>(null);
+  const [filter, setFilter] = useState('all');
+  const [tab, setTab] = useState('findings');
+  const [sourceStart, setSourceStart] = useState(0);
+  function openSource(line: number) { setSourceStart(Math.max(0, line - 5)); setTab('source'); }
+  const [busy, setBusy] = useState(false);
+  const [answer, setAnswer] = useState('');
+  const query = useQuery({ queryKey: ['audit', id], queryFn: () => api<RecordItem>(`/audits/${id}`), refetchInterval: query => active.has(query.state.data?.status ?? '') ? 3000 : false });
+  const audit = query.data;
+  const config = useQuery({ queryKey: ['config', audit?.device_id], enabled: !!audit?.device_id && ctx.user.roles.includes('auditor'), queryFn: () => api<{ text: string; redacted: boolean }>(`/devices/${audit!.device_id}/configuration`) });
+  async function action(name: string) { setBusy(true); try { await post(`/audits/${id}/${name}`); await client.invalidateQueries({ queryKey: ['audit', id] }); ctx.notify(name === 'investigate' ? 'Gemini investigation queued.' : 'Audit updated.'); } catch (error) { ctx.notify((error as Error).message, true); } finally { setBusy(false); } }
+  async function rerun() { setBusy(true); try { const result = await post<{ id: string }>('/audits', { device_id: audit!.device_id, framework: audit!.policy!.framework, policy_id: audit!.policy_id }, { 'Idempotency-Key': crypto.randomUUID() }); navigate('/audits/' + result.id); } catch (error) { ctx.notify((error as Error).message, true); } finally { setBusy(false); } }
+  async function clarify(event: FormEvent) { event.preventDefault(); setBusy(true); try { await post(`/clarifications/${id}`, { answer }); setAnswer(''); await client.invalidateQueries({ queryKey: ['audit', id] }); ctx.notify('Your clarification was saved and investigation resumed.'); } catch (error) { ctx.notify((error as Error).message, true); } finally { setBusy(false); } }
+  if (query.isPending) return <Loading />;
+  if (!audit) return <ErrorBox error={query.error} />;
+  const findings = audit.findings ?? [];
+  const filtered = findings.filter(row => filter === 'all' || row.verdict === filter);
+  const finding = filtered.find(row => row.id === selected) ?? filtered.find(row => row.verdict === 'fail') ?? filtered[0];
+  const lineNumbers = finding?.evidence?.lines ?? [];
+  const allLines = config.data?.text.split('\n') ?? [];
+  const start = Math.max(0, (lineNumbers[0] ?? 1) - 4);
+  return <><Link className="back-link" to="/audits"><ArrowLeft size={15} /> Audit register</Link><PageHead title={audit.name} description={`${audit.vendor?.toUpperCase()} · ${audit.policy?.framework} / ${audit.policy?.version} · ${date(audit.created_at)}`}><Badge value={audit.status ?? 'queued'} />{audit.report && <a className="button secondary" href={`/api/audits/${id}/export/pdf`}><Download size={16} /> Device PDF</a>}</PageHead>
+    {audit.synthetic && <div className="notice"><FileText size={17} /> Synthetic example configuration. Findings demonstrate the declared technical checks.</div>}
+    {audit.status && active.has(audit.status) && <div className="job-progress" role="status"><RefreshCw size={18} className="spin" /><span>{audit.progress}</span><button className="button text" disabled={busy || !ctx.user.roles.includes('auditor')} onClick={() => action('cancel')}>Cancel</button></div>}
+    {audit.error && <ErrorBox error={new Error(audit.error)} />}
+    <div className="audit-summary"><div><span>Evaluated coverage</span><strong>{audit.coverage === undefined ? '—' : `${audit.coverage}%`}</strong></div><div><span>Passing checks</span><strong>{audit.counts?.pass ?? '—'}</strong></div><div><span>Failing checks</span><strong className={audit.counts?.fail ? 'danger-text' : ''}>{audit.counts?.fail ?? '—'}</strong></div><div><span>Need evidence</span><strong>{audit.counts?.insufficient_evidence ?? '—'}</strong></div></div>
+    <div className="tabs" role="tablist" aria-label="Audit sections" onKeyDown={moveTab}>{[['findings', 'Findings & evidence'], ['source', 'Configuration'], ['learning', 'Investigation']].map(([value, label]) => <button role="tab" id={`audit-tab-${value}`} aria-controls={`audit-panel-${value}`} tabIndex={tab === value ? 0 : -1} aria-selected={tab === value} key={value} className={tab === value ? 'selected' : ''} onClick={() => setTab(value)}>{label}</button>)}</div>
+    {tab === 'findings' && <section role="tabpanel" id="audit-panel-findings" aria-labelledby="audit-tab-findings" className="surface"><div className="toolbar"><div className="segmented">{[['all', 'All checks'], ['fail', 'Fail'], ['insufficient_evidence', 'Need evidence'], ['pass', 'Pass']].map(([value, label]) => <button key={value} className={filter === value ? 'selected' : ''} onClick={() => { setFilter(value); setSelected(null); }}>{label}</button>)}</div><div className="actions"><a className="subtle-link" href={`/api/audits/${id}/export/json`}>JSON</a><a className="subtle-link" href={`/api/audits/${id}/export/csv`}>CSV</a></div></div>
+      {filtered.length ? <><p className="list-cue">{filtered.length} findings ? scroll the list to review all checks</p><div className="evidence-layout"><div className="finding-list" aria-label="Scrollable findings" tabIndex={0}>{filtered.map(row => <button key={row.id} aria-pressed={finding?.id === row.id} className={finding?.id === row.id ? 'finding-row selected' : 'finding-row'} onClick={() => setSelected(row.id)}><div><span className="mono">{row.id}</span><Badge value={row.verdict} /></div><strong>{row.title}</strong><small>{row.severity} severity</small></button>)}</div>
+        <article className="finding-detail"><div className="detail-kicker"><span className="mono">{finding.id}</span><Badge value={finding.severity} /></div><h2>{finding.title}</h2><p>{finding.rationale}</p><dl className="comparison"><div><dt>Observed</dt><dd>{showValue(finding.observed)}</dd></div><div><dt>Expected</dt><dd>{showValue(finding.expected)}</dd></div></dl><h3>Configuration evidence</h3>
+          {finding.evidence ? <><p className="muted">{finding.evidence.reason}</p><div className="evidence-links" aria-label="Jump to cited source lines">{lineNumbers.map(line => <button className="button text small" key={line} onClick={() => openSource(line)}>Line {line}</button>)}</div><div className="code-window"><div className="code-title"><FileText size={14} /> Redacted source · lines {lineNumbers.join(', ')}</div><pre>{allLines.length ? allLines.slice(start, Math.min(allLines.length, start + 12)).map((line, index) => <span className={lineNumbers.includes(start + index + 1) ? 'code-line highlighted' : 'code-line'} key={index}><span className="line-number">{start + index + 1}</span>{line || ' '}</span>) : 'Configuration source requires the auditor role.'}</pre></div></> : <div className="evidence-missing">No supported evidence establishes this setting. Add the missing context or review a mapping for the configuration format.</div>}
+          <h3>Rule source</h3><p className="source-citation">{finding.source}</p>{finding.remediation && finding.verdict === 'fail' && <><h3>Proposed remediation <Badge value="review_required" /></h3><pre className="command-block">{finding.remediation}</pre><p className="muted">{finding.remediation_note}</p></>}
+        </article></div></> : <Empty title={active.has(audit.status ?? '') ? 'Your audit is running' : 'No findings in this view'}><p>{audit.progress ?? 'Choose another filter to inspect the assessment.'}</p></Empty>}</section>}
+    {tab === 'source' && <section role="tabpanel" id="audit-panel-source" aria-labelledby="audit-tab-source" className="surface"><div className="section-head"><h2>Configuration snapshot</h2><span className="muted">Credentials redacted</span></div><ErrorBox error={config.error} />{config.isPending && ctx.user.roles.includes('auditor') ? <Loading /> : <><div className="pagination"><span>Lines {allLines.length ? sourceStart + 1 : 0}?{Math.min(sourceStart + 300, allLines.length)} of {allLines.length}</span><div><button className="button text" disabled={!sourceStart} onClick={() => setSourceStart(Math.max(0, sourceStart - 300))}>Previous lines</button><button className="button text" disabled={sourceStart + 300 >= allLines.length} onClick={() => setSourceStart(sourceStart + 300)}>Next lines</button></div></div><pre className="full-configuration">{config.data ? allLines.slice(sourceStart, sourceStart + 300).map((line, index) => <span className={lineNumbers.includes(sourceStart + index + 1) ? 'code-line highlighted' : 'code-line'} key={index}><span className="line-number">{sourceStart + index + 1}</span>{line || ' '}</span>) : 'The auditor role is required to view source configurations.'}</pre></>}</section>}
+    {tab === 'learning' && <section role="tabpanel" id="audit-panel-learning" aria-labelledby="audit-tab-learning" className="surface investigation"><div className="section-head"><h2>Resolve unfamiliar semantics</h2><button className="button" disabled={!ctx.user.roles.includes('auditor') || !ctx.user.ai.configured || busy || active.has(audit.status ?? '')} onClick={() => action('investigate')}><Sparkles size={16} /> Investigate with Gemini</button></div><div className="form-body"><p>{audit.normalization?.unrecognized_count ?? 0} configuration lines were not interpreted by the native normalizer. Not every unrecognized line affects compliance; investigate consequential gaps.</p>{!ctx.user.ai.configured && <div className="notice">Gemini is not enabled. Set GEMINI_API_KEY and GEMINI_MODEL in .env, enable LLM_ENABLED and restart API/worker services. Manual mapping remains available.</div>}
+      {audit.investigation && <><h3>Investigation summary</h3><p>{audit.investigation.summary}</p><p className="muted">{audit.investigation.model} · {audit.investigation.tokens} provider-reported tokens</p>{audit.investigation.questions.map((question, index) => <div className="clarification" key={index}><h3>{question.question}</h3><p>{question.reason}</p></div>)}{audit.investigation.questions.length > 0 && <form onSubmit={clarify}><label>Your clarification<textarea value={answer} onChange={event => setAnswer(event.target.value)} required maxLength={4000} rows={4} /></label><button className="button" disabled={!ctx.user.roles.includes('auditor') || busy || !answer.trim()}>Save and resume investigation</button></form>}{audit.investigation.trace.length > 0 && <details><summary>Tool activity</summary><ol>{audit.investigation.trace.map((entry, index) => <li key={index}>Step {entry.step}: {entry.tool.replaceAll('_', ' ')}</li>)}</ol></details>}</>}
+      <h3>Unrecognized source context</h3><div className="code-window"><pre>{audit.normalization?.unrecognized.slice(0, 25).map(row => <span className="code-line" key={row.line}><span className="line-number">{row.line}</span>{row.text}</span>) ?? 'Run the audit to identify unfamiliar syntax.'}</pre></div><div className="actions"><Link className="button secondary" to="/training"><Plus size={16} /> Create or review a mapping</Link></div></div></section>}
+    <div className="audit-bottom"><p>{audit.policy?.scope}</p><div className="actions">{audit.status === 'failed' && <button className="button secondary" disabled={busy} onClick={() => action('retry')}>Retry failed work</button>}<button className="button secondary" disabled={busy || active.has(audit.status ?? '') || !ctx.user.roles.includes('auditor')} onClick={rerun}><RefreshCw size={15} /> New audit with current mappings</button></div></div>
+  </>;
+}

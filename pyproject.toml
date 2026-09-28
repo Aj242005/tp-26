@@ -1,0 +1,41 @@
+[project]
+name = "sih26155"
+version = "0.1.0"
+description = "Evidence-backed multi-vendor configuration auditing"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "pydantic-settings>=2.8,<3",
+  "sqlalchemy>=2.0,<3",
+  "psycopg[binary]>=3.2,<4",
+  "alembic>=1.15,<2",
+  "redis>=5.2,<7",
+  "boto3>=1.37,<2",
+  "cryptography>=50,<51",
+  "authlib>=1.5,<2",
+  "httpx>=0.28,<1",
+  "python-multipart>=0.0.20,<1",
+  "google-genai>=1.0,<3",
+  "reportlab>=4.3,<5",
+  "defusedxml>=0.7,<1",
+  "prometheus-client>=0.21,<1",
+  "python-dotenv>=1,<2",
+  "opentelemetry-sdk>=1.30,<2",
+  "opentelemetry-exporter-otlp-proto-http>=1.30,<2",
+  "opentelemetry-instrumentation-fastapi>=0.51b0,<1",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3,<10", "ruff>=0.11,<1", "pytest-asyncio>=0.25,<2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
